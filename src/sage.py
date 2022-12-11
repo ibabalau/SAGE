@@ -1,12 +1,12 @@
 import os,re,operator, json, datetime, glob
-import statistics 
+import statistics
 import seaborn as sns
 import pandas as pd
 import requests
 import csv
 import json
 import os.path
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,7 +21,7 @@ import matplotlib as mpl
 mpl.style.use('default')
 import numpy as np
 import seaborn as sns
-import numpy as np 
+import numpy as np
 import subprocess
 import sys
 import graphviz
@@ -130,7 +130,7 @@ mapping = {'MicroAttackStage.TARGET_IDEN' : 'MacroAttackStage.PASSIVE_RECON',
        'MicroAttackStage.DATA_DELIVERY': 'MacroAttackStage.DELIVERY',
        'MicroAttackStage.NON_MALICIOUS': 'MacroAttackStage.NONE',
        }
- 
+
 macro = {0: 'MacroAttackStage.NONE', 1: 'MacroAttackStage.PASSIVE_RECON', 2: 'MacroAttackStage.ACTIVE_RECON', 3: 'MacroAttackStage.PRIVLEDGE_ESC', 4: 'MacroAttackStage.ENSURE_ACCESS', 5: 'MacroAttackStage.TARGETED_EXP', 6: 'MacroAttackStage.ZERO_DAY', 7: 'MacroAttackStage.DISRUPT', 8: 'MacroAttackStage.DISTROY', 9: 'MacroAttackStage.DISTORT', 10: 'MacroAttackStage.DISCLOSURE', 11: 'MacroAttackStage.DELIVERY'}
 macro_inv = {v: k for k, v in macro.items()}
 micro = {0: 'MicroAttackStage.INIT', 1: 'MicroAttackStage.TARGET_IDEN', 2: 'MicroAttackStage.SURFING', 3: 'MicroAttackStage.SOCIAL_ENGINEERING', 4: 'MicroAttackStage.HOST_DISC', 5: 'MicroAttackStage.SERVICE_DISC', 6: 'MicroAttackStage.VULN_DISC', 7: 'MicroAttackStage.INFO_DISC', 10: 'MicroAttackStage.USER_PRIV_ESC', 11: 'MicroAttackStage.ROOT_PRIV_ESC', 12: 'MicroAttackStage.NETWORK_SNIFFING', 13: 'MicroAttackStage.BRUTE_FORCE_CREDS', 14: 'MicroAttackStage.ACCT_MANIP', 15: 'MicroAttackStage.TRUSTED_ORG_EXP', 16: 'MicroAttackStage.PUBLIC_APP_EXP', 17: 'MicroAttackStage.REMOTE_SERVICE_EXP', 18: 'MicroAttackStage.SPEARPHISHING', 19: 'MicroAttackStage.SERVICE_SPECIFIC', 20: 'MicroAttackStage.DEFENSE_EVASION', 21: 'MicroAttackStage.COMMAND_AND_CONTROL', 22: 'MicroAttackStage.LATERAL_MOVEMENT', 23: 'MicroAttackStage.ARBITRARY_CODE_EXE', 99: 'MicroAttackStage.PRIV_ESC', 100: 'MicroAttackStage.END_POINT_DOS', 101: 'MicroAttackStage.NETWORK_DOS', 102: 'MicroAttackStage.SERVICE_STOP', 103: 'MicroAttackStage.RESOURCE_HIJACKING', 104: 'MicroAttackStage.DATA_DESTRUCTION', 105: 'MicroAttackStage.CONTENT_WIPE', 106: 'MicroAttackStage.DATA_ENCRYPTION', 107: 'MicroAttackStage.DEFACEMENT', 108: 'MicroAttackStage.DATA_MANIPULATION', 109: 'MicroAttackStage.DATA_EXFILTRATION', 110: 'MicroAttackStage.DATA_DELIVERY', 111: 'MicroAttackStage.PHISHING', 999: 'MicroAttackStage.NON_MALICIOUS'}
@@ -139,10 +139,10 @@ micro2macro = {'MicroAttackStage.TARGET_IDEN': 'MacroAttackStage.PASSIVE_RECON',
 mcols = list(set([(0.8941176470588236, 0.10196078431372549, 0.10980392156862745), (0.21568627450980393, 0.49411764705882355, 0.7215686274509804), (0.30196078431372547, 0.6862745098039216, 0.2901960784313726), (0.596078431372549, 0.3058823529411765, 0.6392156862745098), (1.0, 0.4980392156862745, 0.0), (0.6509803921568628, 0.33725490196078434, 0.1568627450980392), (0.9686274509803922, 0.5058823529411764, 0.7490196078431373), (0.6, 0.6, 0.6), (0.4, 0.7607843137254902, 0.6470588235294118), (0.9882352941176471, 0.5529411764705883, 0.3843137254901961), (0.5529411764705883, 0.6274509803921569, 0.796078431372549), (0.9058823529411765, 0.5411764705882353, 0.7647058823529411), (0.6509803921568628, 0.8470588235294118, 0.32941176470588235), (1.0, 0.8509803921568627, 0.1843137254901961), (0.8980392156862745, 0.7686274509803922, 0.5803921568627451), (0.7019607843137254, 0.7019607843137254, 0.7019607843137254), (0.12156862745098039, 0.4666666666666667, 0.7058823529411765), (1.0, 0.4980392156862745, 0.054901960784313725), (0.17254901960784313, 0.6274509803921569, 0.17254901960784313), (0.8392156862745098, 0.15294117647058825, 0.1568627450980392), (0.5803921568627451, 0.403921568627451, 0.7411764705882353), (0.5490196078431373, 0.33725490196078434, 0.29411764705882354), (0.8901960784313725, 0.4666666666666667, 0.7607843137254902), (0.4980392156862745, 0.4980392156862745, 0.4980392156862745), (0.7372549019607844, 0.7411764705882353, 0.13333333333333333), (0.09019607843137255, 0.7450980392156863, 0.8117647058823529), (0.10588235294117647, 0.6196078431372549, 0.4666666666666667), (0.8509803921568627, 0.37254901960784315, 0.00784313725490196), (0.4588235294117647, 0.4392156862745098, 0.7019607843137254), (0.9058823529411765, 0.1607843137254902, 0.5411764705882353), (0.4, 0.6509803921568628, 0.11764705882352941), (0.9019607843137255, 0.6705882352941176, 0.00784313725490196), (0.6509803921568628, 0.4627450980392157, 0.11372549019607843), (0.4, 0.4, 0.4), (0.4980392156862745, 0.788235294117647, 0.4980392156862745), (0.7450980392156863, 0.6823529411764706, 0.8313725490196079), (0.9921568627450981, 0.7529411764705882, 0.5254901960784314), (0.2196078431372549, 0.4235294117647059, 0.6901960784313725), (0.9411764705882353, 0.00784313725490196, 0.4980392156862745), (0.7490196078431373, 0.3568627450980392, 0.09019607843137253), (0.4, 0.4, 0.4), (0.984313725490196, 0.7058823529411765, 0.6823529411764706), (0.7019607843137254, 0.803921568627451, 0.8901960784313725), (0.8, 0.9215686274509803, 0.7725490196078432), (0.8705882352941177, 0.796078431372549, 0.8941176470588236), (0.996078431372549, 0.8509803921568627, 0.6509803921568628), (0.8980392156862745, 0.8470588235294118, 0.7411764705882353), (0.9921568627450981, 0.8549019607843137, 0.9254901960784314)]))
 small_mapping = {
     1:'tarID',
-    2:'surf', 
+    2:'surf',
     4:'hostD',
     5: 'serD',
-    6: 'vulnD', 
+    6: 'vulnD',
     7: 'infoD',
     10:'uPrivEsc',
     11:'rPrivEsc',
@@ -173,42 +173,42 @@ small_mapping = {
     111: 'phish',
     999: 'benign'
 }
-rev_smallmapping = dict([(value, key) for key, value in small_mapping.items()]) 
-verbose_micro = {'INIT': 'INITILIZE', 
-'TARGET_IDEN': 'TARGET IDENTIFICATION', 
-'SURFING': 'SURFING', 
-'SOCIAL_ENGINEERING': 'SOCIAL ENGINEERING', 
-'HOST_DISC': 'HOST DISCOVERY', 
-'SERVICE_DISC': 'SERVICE DISCOVERY', 
-'VULN_DISC': 'VULNERABILTY DISCOVERY', 
-'INFO_DISC': 'INFO DISCOVERY', 
-'USER_PRIV_ESC': 'USER PRIVILEGE ESCALATION', 
-'ROOT_PRIV_ESC': 'ROOT PRIVILEGE ESCALATION', 
-'NETWORK_SNIFFING': 'NETWORK SNIFFING', 
-'BRUTE_FORCE_CREDS': 'BRUTE FORCE CREDENTIALS', 
-'ACCT_MANIP': 'ACCOUNT MANIPULATION', 
-'TRUSTED_ORG_EXP': 'TRUSTED ORG. EXPLOIT', 
-'PUBLIC_APP_EXP': 'PUBLIC APP EXPLOIT', 
-'REMOTE_SERVICE_EXP': 'REMOTE SERVICE EXPLOIT', 
-'SPEARPHISHING': 'SPEAR PHISHING', 
-'SERVICE_SPECIFIC': 'SERVICE SPECIFIC', 
-'DEFENSE_EVASION': 'DEFENSE EVASION', 
-'COMMAND_AND_CONTROL': 'COMMAND AND CONTROL', 
-'LATERAL_MOVEMENT': 'LATERAL MOVEMENT', 
-'ARBITRARY_CODE_EXE': 'ARBITRARY CODE EXECUTION', 
-'PRIV_ESC': 'PRIVILEGE ESCALATION', 
-'END_POINT_DOS': 'END POINT DoS', 
-'NETWORK_DOS': 'NETWORK DoS', 
-'SERVICE_STOP': 'SERVICE STOP', 
-'RESOURCE_HIJACKING': 'RESOURCE HIJACKING', 
-'DATA_DESTRUCTION': 'DATA DESTRUCTION', 
-'CONTENT_WIPE': 'CONTENT WIPE', 
-'DATA_ENCRYPTION': 'DATA ENCRYPTION', 
-'DEFACEMENT': 'DEFACEMENT', 
-'DATA_MANIPULATION': 'DATA MANIPULATION', 
-'DATA_EXFILTRATION': 'DATA EXFILTRATION', 
-'DATA_DELIVERY': 'DATA DELIVERY', 
-'PHISHING': 'PHISHING', 
+rev_smallmapping = dict([(value, key) for key, value in small_mapping.items()])
+verbose_micro = {'INIT': 'INITILIZE',
+'TARGET_IDEN': 'TARGET IDENTIFICATION',
+'SURFING': 'SURFING',
+'SOCIAL_ENGINEERING': 'SOCIAL ENGINEERING',
+'HOST_DISC': 'HOST DISCOVERY',
+'SERVICE_DISC': 'SERVICE DISCOVERY',
+'VULN_DISC': 'VULNERABILTY DISCOVERY',
+'INFO_DISC': 'INFO DISCOVERY',
+'USER_PRIV_ESC': 'USER PRIVILEGE ESCALATION',
+'ROOT_PRIV_ESC': 'ROOT PRIVILEGE ESCALATION',
+'NETWORK_SNIFFING': 'NETWORK SNIFFING',
+'BRUTE_FORCE_CREDS': 'BRUTE FORCE CREDENTIALS',
+'ACCT_MANIP': 'ACCOUNT MANIPULATION',
+'TRUSTED_ORG_EXP': 'TRUSTED ORG. EXPLOIT',
+'PUBLIC_APP_EXP': 'PUBLIC APP EXPLOIT',
+'REMOTE_SERVICE_EXP': 'REMOTE SERVICE EXPLOIT',
+'SPEARPHISHING': 'SPEAR PHISHING',
+'SERVICE_SPECIFIC': 'SERVICE SPECIFIC',
+'DEFENSE_EVASION': 'DEFENSE EVASION',
+'COMMAND_AND_CONTROL': 'COMMAND AND CONTROL',
+'LATERAL_MOVEMENT': 'LATERAL MOVEMENT',
+'ARBITRARY_CODE_EXE': 'ARBITRARY CODE EXECUTION',
+'PRIV_ESC': 'PRIVILEGE ESCALATION',
+'END_POINT_DOS': 'END POINT DoS',
+'NETWORK_DOS': 'NETWORK DoS',
+'SERVICE_STOP': 'SERVICE STOP',
+'RESOURCE_HIJACKING': 'RESOURCE HIJACKING',
+'DATA_DESTRUCTION': 'DATA DESTRUCTION',
+'CONTENT_WIPE': 'CONTENT WIPE',
+'DATA_ENCRYPTION': 'DATA ENCRYPTION',
+'DEFACEMENT': 'DEFACEMENT',
+'DATA_MANIPULATION': 'DATA MANIPULATION',
+'DATA_EXFILTRATION': 'DATA EXFILTRATION',
+'DATA_DELIVERY': 'DATA DELIVERY',
+'PHISHING': 'PHISHING',
 'NON_MALICIOUS': 'NOT MALICIOUS'}
 
 ## DO NOT EXECUTE: Convert each alert into Moskal categoru: Manual mapping
@@ -373,9 +373,9 @@ ccdc_combined = { "ET CHAT IRC authorization message": MicroAttackStage.NON_MALI
     "ET TOR Known Tor Relay/Router (Not Exit) Node Traffic group 595": MicroAttackStage.NON_MALICIOUS,
     "ET TOR Known Tor Relay/Router (Not Exit) Node Traffic group 615": MicroAttackStage.NON_MALICIOUS,
     "ET TOR Known Tor Relay/Router (Not Exit) Node Traffic group 684": MicroAttackStage.NON_MALICIOUS,
-    
-    
-    
+
+
+
     "ET SCAN Potential SSH Scan": MicroAttackStage.SERVICE_DISC,
     "ET CHAT Skype VOIP Checking Version (Startup)": MicroAttackStage.NON_MALICIOUS,
     "ET TROJAN HackerDefender Root Kit Remote Connection Attempt Detected": MicroAttackStage.COMMAND_AND_CONTROL,
@@ -1266,18 +1266,18 @@ def get_attack_stage_mapping(signature):
             if signature in v:
                 result = k
                 break
-    
+
     return micro_inv[str(result)]
 
-# Program to find most frequent  
-def most_frequent(serv): 
-    return max(set(serv), key = serv.count) 
-    
+# Program to find most frequent
+def most_frequent(serv):
+    return max(set(serv), key = serv.count)
+
 ser_groups = dict({
     'http(s)': ['http', 'https', 'ddi-udp-1', 'radan-http'],
     'wireless' : ['wap-wsp'],
     'voip': ['sip', 'sips'],
-    'browser': ['vrml-multi-use'], 
+    'browser': ['vrml-multi-use'],
     'searchEng': ['search-agent'],
     'broadcast': ['ssdp', 'snmp', 'commplex-main', 'icmpd', 'wsdapi'],
     'nameserver': ['domain', 'netbios-ns', 'menandmice-dns'],
@@ -1286,19 +1286,19 @@ ser_groups = dict({
     'surveillance' : ['remoteware-cl', 'ads-c', 'syslog', 'websm', 'distinct', 'irisa'],
 
     'hostingServer': ['cslistener', 'etlservicemgr', 'web2host'],
-    
+
     'printService' : ['pharos', 'ipps'],
     #'sendEmail': ['smtp'],
     'migration' : ['fs-agent'],
     'email': ['smtp', 'imaps', 'pop3', 'imap', 'pop3s', 'submission'],
-    'authentication': ['kerberos', 'nv-video'], 
+    'authentication': ['kerberos', 'nv-video'],
     'ATCcomm': ['cpdlc', 'fis'],
-    
+
     'storage': ['http-alt', 'ncube-lm', 'postgresql', 'mysql', 'cm', 'ms-sql-s', 'ms-sql-m', 'mongodb'],
-    
+
     'dataSharing': ['ftp', 'pcsync-https', 'ndmp', 'netbios-ssn', 'microsoft-ds', 'profinet-rt', 'instantia'],
     'clocksync' : ['ntp'],
-    
+
     'unassigned' : ['unknown', 'Unknown']
 })
 
@@ -1306,14 +1306,16 @@ ser_groups = dict({
 #for k,v in ser_groups.items():
 #    for x in v:
 #        ser_inv.setdefault(x,[]).append(k)
-        
+
 def load_IANA_mapping():
     """Download the IANA port-service mapping"""
-    response = requests.get(IANA_CSV_FILE)
-    if response.ok:
-        content = response.content.decode("utf-8")
-    else:
-        raise RuntimeError('Cannot download IANA ports')
+    #response = requests.get(IANA_CSV_FILE)
+    #if response.ok:
+    #    content = response.content.decode("utf-8")
+    #else:
+    #    raise RuntimeError('Cannot download IANA ports')
+    csv_file = open('service-names-port-numbers.csv', 'r')
+    content = csv_file.read()
     table = csv.reader(content.splitlines())
 
     # Drop headers (Service name, port, protocol, description, ...)
@@ -1324,7 +1326,7 @@ def load_IANA_mapping():
     for row in table:
         # Drop missing port number, Unassigned and Reserved ports
         if row[1] and 'Unassigned' not in row[3]:# and 'Reserved' not in row[3]:
-            
+
             # Split range in single ports
             if '-' in row[1]:
                 low_port, high_port = map(int, row[1].split('-'))
@@ -1337,21 +1339,21 @@ def load_IANA_mapping():
                     "description": row[3] if row[3] else "---",
                 }
         else:
-            # Do nothing 
+            # Do nothing
             pass
     return ports
-    
+
 ## 3
 def readfile(fname):
     unparsed_data = None
     with open(fname, 'r') as f:
         unparsed_data = json.load(f)
-        
+
     unparsed_data = unparsed_data[::-1]
     #print('# events: ', len(unparsed_data))
     #print(unparsed_data[0])
     return unparsed_data
-    
+
 
 #cats = dict()
 #ips = dict()
@@ -1359,7 +1361,7 @@ def readfile(fname):
 #h_trig = []
 
 def parse(unparsed_data, alert_labels=[], slim=False):
-    
+
     FILTER = False
     badIP = '169.254.169.254'
     __cats = set()
@@ -1373,7 +1375,7 @@ def parse(unparsed_data, alert_labels=[], slim=False):
     for id, d in enumerate(unparsed_data):
         #print(d)
         raw = ''
-        
+
         try:
              raw = json.loads(d['result']['_raw'])
         except:
@@ -1381,12 +1383,12 @@ def parse(unparsed_data, alert_labels=[], slim=False):
                 raw = json.loads(d['_raw'])
             except:
                 raw = d
-                
+
         if raw['event_type'] != 'alert':
             continue
         #app_proto = raw['app_proto']
         host = ''
-        
+
         try:
             host = raw['host']
         except:
@@ -1394,18 +1396,18 @@ def parse(unparsed_data, alert_labels=[], slim=False):
                 host = d['host'][3:]
             except:
                 host = 'dummy'
-                
+
 
         #print(host)
         ts = raw['timestamp']
         dt = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%f%z')# 2018-11-03T23:16:09.148520+0000
         DIFF = 0.0 if prev== -1 else round((dt - prev).total_seconds(),2)
         prev = dt
-        
-                
+
+
         sig = raw['alert']['signature']
         cat = raw['alert']['category']
-        
+
         severity = raw['alert']['severity']
 
         if cat == 'Attempted Information Leak' and FILTER:
@@ -1418,7 +1420,7 @@ def parse(unparsed_data, alert_labels=[], slim=False):
         # Filtering out mistaken alerts / uninteresting alerts
         if srcip == badIP or dstip == badIP or cat == 'Not Suspicious Traffic':
             continue
-            
+
         if not slim:
             mcat = get_attack_stage_mapping(sig)
             data.append((DIFF, srcip, srcport, dstip, dstport, sig, cat, host, dt, mcat))
@@ -1426,15 +1428,15 @@ def parse(unparsed_data, alert_labels=[], slim=False):
             data.append((DIFF, srcip, srcport, dstip, dstport, sig, cat, host, dt))
 
         #host_ip.append((host, srcip, dstip))
-       
-        
+
+
         __cats.add(cat)
         __ips.add(srcip)
         __ips.add(dstip)
         __hosts.add(host)
         __sev.add(severity)
 
-        
+
     '''_cats = [(id,c) for (id,c) in enumerate(__cats)]
     for (i,c) in _cats:
         if c not in cats.keys():
@@ -1447,13 +1449,13 @@ def parse(unparsed_data, alert_labels=[], slim=False):
     for (i,h) in _hosts:
         if h not in hosts.keys():
             hosts[h] = 0 if len(hosts.values())==0 else max(hosts.values())+1'''
-    
+
     #print(cats)
     #print(len(cats))
     #print(data[0][1], data[0][3])
     #print(data[1][1], data[1][3])
     print('Reading # alerts: ', len(data))
-    
+
     if slim:
         print(len(data), len(alert_labels))
         j = 0
@@ -1463,59 +1465,59 @@ def parse(unparsed_data, alert_labels=[], slim=False):
             dest = spl[1]
             mcat = int(spl[-1][:-1])
             cat = spl[2]
-            
+
             if source == badIP or dest == badIP or cat == 'Not Suspicious Traffic':
                 continue
             if spl[2] == 'Attempted Information Leak' and FILTER:
                 continue
-                
+
             if source == data[j][1] and dest == data[j][3]:
-                
+
                 data[j] += (mcat,)
             j += 1
     data = sorted(data, key=lambda x: x[8]) # Sort alerts into ascending order
-    return data    
+    return data
 
 def removeDup(unparse, plot=False, t=1.0):
-    
+
     if plot:
         orig, removed = dict(), dict()
-        
+
         for _unparse in unparse:
-            
+
             li = [x[9] for x in _unparse]
-            
+
             for i in li:
                 orig[i] = orig.get(i, 0) + 1
             print(orig.keys())
-            
+
             li = [_unparse[x] for x in range(1,len(_unparse)) if _unparse[x][9] != 999 and not (_unparse[x][0] <= t  # Diff from previous alert is less than x sec
                                                               and _unparse[x][1] == _unparse[x-1][1] # same srcIP
                                                               and _unparse[x][3] == _unparse[x-1][3] # same destIP
                                                               and _unparse[x][5] == _unparse[x-1][5] # same suricata category
-                                                              and _unparse[x][2] == _unparse[x-1][2] # same srcPort 
+                                                              and _unparse[x][2] == _unparse[x-1][2] # same srcPort
                                                               and _unparse[x][4] == _unparse[x-1][4] # same destPort
                                                                       )]
             li = [x[9] for x in li]
             for i in li:
                 removed[i] = removed.get(i, 0) + 1
             print(removed.keys())
-        
+
     else:
-        
-        
+
+
         li = [unparse[x] for x in range(1,len(unparse)) if unparse[x][9] != 999 and not (unparse[x][0] <= t  # Diff from previous alert is less than x sec
                                                               and unparse[x][1] == unparse[x-1][1] # same srcIP
                                                               and unparse[x][3] == unparse[x-1][3] # same destIP
                                                               and unparse[x][5] == unparse[x-1][5] # same suricata category
-                                                              and unparse[x][2] == unparse[x-1][2] # same srcPort 
+                                                              and unparse[x][2] == unparse[x-1][2] # same srcPort
                                                               and unparse[x][4] == unparse[x-1][4] # same destPort
                                                             )]
         rem = [(unparse[x][9]) for x in range(1,len(unparse)) if  (unparse[x][0] <= t  # Diff from previous alert is less than x sec
                                                               and unparse[x][1] == unparse[x-1][1] # same srcIP
                                                               and unparse[x][3] == unparse[x-1][3] # same destIP
                                                               and unparse[x][5] == unparse[x-1][5] # same suricata category
-                                                              and unparse[x][2] == unparse[x-1][2] # same srcPort 
+                                                              and unparse[x][2] == unparse[x-1][2] # same srcPort
                                                               and unparse[x][4] == unparse[x-1][4] # same destPort
                                                             )]
     if plot:
@@ -1566,7 +1568,7 @@ def removeDup(unparse, plot=False, t=1.0):
 
     print('Filtered # alerts (remaining)', len(li))
     return li
-    
+
 ## 5
 
 def load_data(path, t):
@@ -1582,29 +1584,29 @@ def load_data(path, t):
         print(name)
         team_labels.append(name)
         unparse_ = []
-        
+
         unparse_ = parse(readfile(f), [])
-        
+
         unparse_ = removeDup(unparse_, t=t)
-        
+
         # EXP: Limit alerts by timing is better than limiting volume because each team is on a different scale. 50% alerts for one team end at a diff time than for others
         start_hours = _s_ # which hour to start from?
         end_hours = _e_ # which hour to end at?
-        end_time_limit = 3600*end_hours 
+        end_time_limit = 3600*end_hours
         start_time_limit = 3600*start_hours
-        
+
         first_ts = unparse_[0][8]
         startTimes.append(first_ts)
         filtered_unparse = []
-        
-        
+
+
         filtered_unparse = [x for x in unparse_ if (((x[8]-first_ts).total_seconds() <= end_time_limit) \
                                                 and ((x[8]-first_ts).total_seconds() >= start_time_limit))]
-                                                
+
         unparse.append(filtered_unparse)
-        
+
     return (unparse, team_labels)
-    
+
 ## 11
 ## Plotting for each team, how much categories are consumed
 def plot_histogram(unparse, team_labels):
@@ -1639,7 +1641,7 @@ def plot_histogram(unparse, team_labels):
                 #if cats[ev[6]] != 14:
                     t[tid][cats[ev[6]]] += 1
             else:
-                t[tid][ids.index(ev[9])] += 1 
+                t[tid][ids.index(ev[9])] += 1
         #print(count)
         for i,acat in enumerate(t[tid]):
             t[tid][i] = acat/len(team)
@@ -1651,14 +1653,14 @@ def plot_histogram(unparse, team_labels):
             plot = plt.bar(ind, t[tid], width)
         elif tid==1:
             plot = plt.bar(ind, t[tid], width,
-                 bottom=t[tid-1]) 
+                 bottom=t[tid-1])
         else:
             inde = [x for x in range(tid)]
             bot = np.add(t[0], t[1])
             for i in inde[2:]:
                 bot = np.add(bot, t[i]).tolist()
             plot = plt.bar(ind, t[tid], width,
-                 bottom=bot) 
+                 bottom=bot)
         p.append(plot)
 
         # TODO: Decide whether to put it like this or normalize over columns
@@ -1674,7 +1676,7 @@ def plot_histogram(unparse, team_labels):
     #plt.yticks(np.arange(0, 13000, 1000))
     plt.legend([plot[0] for plot in p], team_labels)
     plt.tight_layout()
-    #plt.show() 
+    #plt.show()
     return plt
 
 ## 14
@@ -1682,17 +1684,17 @@ def legend_without_duplicate_labels(ax, fontsize=10, loc='upper right'):
     handles, labels = ax.get_legend_handles_labels()
     unique = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]]
     unique = sorted(unique, key = lambda x: x[1])
-    ax.legend(*zip(*unique), loc=loc, fontsize=fontsize) 
-    
+    ax.legend(*zip(*unique), loc=loc, fontsize=fontsize)
+
 ## 13
 # Goal: (1) To first form a collective attack profile of a team
 # and then (2) TO compare attack profiles of teams
 def getepisodes(action_seq, mcat, plot, debug=False):
-    
+
     dx = 0.1
     #print(h_d_mindata)
     y = [len(x) for x in action_seq]#
-    
+
     # test case 1: normal sequence
     #y = [11, 0, 0, 2, 5, 2, 2, 2, 4, 2, 0, 0, 8, 6, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 13, 1, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 0, 9, 2]
     # test case 2: start is not detected
@@ -1722,15 +1724,15 @@ def getepisodes(action_seq, mcat, plot, debug=False):
 
     if sum(y) == 0:
         return []
-    if len(y) == 1: # artifically augemnting list for a single action to be picked up                                                                 
-        y = [y[0], 0]  
+    if len(y) == 1: # artifically augemnting list for a single action to be picked up
+        y = [y[0], 0]
     cap  = max(y)+1
     dy = diff(y)/dx
-    
+
 
     dim = len(dy)
     #print(list(zip(y[:dim],dy[:dim])))
-    
+
     positive = [(0, dy[0])]
     positive.extend( [(ind, dy[ind]) for ind in range(1, dim) if (dy[ind-1]<=0 and dy[ind] > 0 )])# or ind-1 == 0]
     negative = [(ind+1, dy[ind+1]) for ind in range(0, dim-1) if (dy[ind] < 0 and dy[ind+1] >= 0)]
@@ -1739,19 +1741,19 @@ def getepisodes(action_seq, mcat, plot, debug=False):
     elif dy[-1] > 0: # special case for last ramp up without any ramp down
         #print('adding somthing at the end ', (len(dy), dy[-1]))
         negative.append((len(dy), dy[-1]))
- 
-   
+
+
     common = list(set(negative).intersection(positive))
     negative = [item for item in negative if item not in common]
     positive = [item for item in positive if item not in common]
-    
+
     #print('--', [x[0] for x in negative] , len(y))
     negative = [x for x in negative if (y[x[0]] <= 0 or x[0] == len(y)-1)]
     positive = [x for x in positive if (y[x[0]] <= 0 or x[0] == 0)]
-    
+
     #print(positive)
     #print(negative)
-    
+
     if len(negative) < 1 or len(positive) < 1:
         return []
 
@@ -1764,29 +1766,29 @@ def getepisodes(action_seq, mcat, plot, debug=False):
 
             if negative[j][0] >= ep1 and negative[j][0] < ep2:
                     ends.append(negative[j])
-        
+
         if len(ends) > 0:
             episode = (ep1, max([x[0] for x in ends]))
             episodes_.append(episode)
     if (len(positive) == 1 and len(negative) == 1):
         episode = (positive[0][0], negative[0][0])
         episodes_.append(episode)
-        
-    if (len(episodes_) > 0 and negative[-1][0] != episodes_[-1][1] ):  
+
+    if (len(episodes_) > 0 and negative[-1][0] != episodes_[-1][1] ):
         episode = (positive[-1][0], negative[-1][0])
         episodes_.append(episode)
-     
-    
-    if (len(episodes_) > 0 and positive[-1][0] != episodes_[-1][0]):# and positive[-1][0] < episodes[-1][1]): 
+
+
+    if (len(episodes_) > 0 and positive[-1][0] != episodes_[-1][0]):# and positive[-1][0] < episodes[-1][1]):
         elim = [x[0] for x in common]
         if len(elim) > 0 and max(elim) > positive[-1][0]:
             episode = (positive[-1][0], max(elim))
             episodes_.append(episode)
-            
+
     if (len(episodes_) == 0 and len(positive) == 2 and len(negative) == 1):
         episode = (positive[1][0], negative[0][0])
         episodes_.append(episode)
-    
+
     if plot:
         fig = plt.figure()
         plt.title(mcat)
@@ -1811,15 +1813,15 @@ def aggregate_into_episodes(unparse, team_labels, step=150):
 
     PRINT = False
     interesting = []
-    # Reorganize data for each attacker per team 
+    # Reorganize data for each attacker per team
     team_data = dict()
     s_t = dict()
     for tid,team in enumerate(unparse):
         #attackers = list(set([x[1] for x in team])) # collecting all src ip
         #attackers.extend(list(set([x[3] for x in team]))) # collection all dst ip
         #attackers = [x for x in attackers if x not in hostip.keys()] # filtering only attackers
-        
-        
+
+
         host_alerts = dict()
 
         for ev in team:
@@ -1829,28 +1831,28 @@ def aggregate_into_episodes(unparse, team_labels, step=150):
             d = ev[3]
             c = ev[9]
             ts = ev[8]
-            sp = ev[2] if ev[2] != None else 65000 
+            sp = ev[2] if ev[2] != None else 65000
             dp = ev[4] if ev[4] != None else 65000
             signature = ev[5]
             # Simply respect the source,dst format! (Correction: source is always source and dest alwyas dest!)
-            
+
             source, dest, port = -1, -1, -1
             #print(s, d, sp, dp)
             #assert sp >= dp
-            
+
             source = s #if s not in inv_hostip.keys() else inv_hostip[s]
             dest = d #if d not in inv_hostip.keys() else inv_hostip[d]
             # explicit name if cant resolve
-            #port = str(dp) if (dp not in port_services.keys() or port_services[dp] == 'unknown') else port_services[dp]['name'] 
-            
+            #port = str(dp) if (dp not in port_services.keys() or port_services[dp] == 'unknown') else port_services[dp]['name']
+
             # say unknown if cant resolve it
             port = 'unknown' if (dp not in port_services.keys() or port_services[dp] == 'unknown') else port_services[dp]['name']
-            
+
             if (source,dest) not in host_alerts.keys() and (dest,source) not in host_alerts.keys():
                 host_alerts[(source,dest)] = []
                 #print(tid, (source,dest), 'first', ev[8])
                 s_t[str(tid)+"|"+str(source)+"->"+str(dest)] = ev[8]
-                
+
             if((source,dest) in host_alerts.keys()):
                 host_alerts[(source,dest)].append((dest, c, ts, port, signature)) # TODO: remove the redundant host names
                 #print(source, dest, (micro[c].split('.'))[-1], port)
@@ -1859,8 +1861,8 @@ def aggregate_into_episodes(unparse, team_labels, step=150):
                 #print(dest,source, (micro[c].split('.'))[-1], port)
 
         team_data[tid] = host_alerts.items()
-        
-    # Calculate number of alerts over time for each attacker 
+
+    # Calculate number of alerts over time for each attacker
     #print(len(s_t))
     team_episodes = []
 
@@ -1882,15 +1884,15 @@ def aggregate_into_episodes(unparse, team_labels, step=150):
             if len(alerts) <= 1:
                 #print('kill ', attacker)
                 continue
-            
+
             #print(attacker, len([(x[1]) for x in alerts])) # TODO: what about IPs that are not attacker related?
             first_elapsed_time = round((alerts[0][2]-startTimes[tid]).total_seconds(),2)
-            
+
             # debugging if start times of each connection are correct.
             #print(first_elapsed_time, round( (s_t[str(tid)+"|"+str(attacker[0])+"->"+str(attacker[1])] - startTimes[tid]).total_seconds(),2))
             #last_elapsed_time = round((alerts[-1][2] - alerts[0][2]).total_seconds() + first_elapsed_time,2)
             #print(first_elapsed_time, last_elapsed_time)
-            
+
             _team_times['->'.join(attacker)] = (first_elapsed_time)#, last_elapsed_time)
             ts = [x[2] for x in alerts]
             rest = [(x[0], x[1], x[2], x[3], x[4]) for x in alerts]
@@ -1908,39 +1910,39 @@ def aggregate_into_episodes(unparse, team_labels, step=150):
             assert(len(ts) == len(DIFF))
             elapsed_time = list(accumulate(DIFF))
             relative_elapsed_time = [round(x+first_elapsed_time,2) for x in elapsed_time]
-            
-            
+
+
             assert(len(elapsed_time) == len(DIFF))
 
             t0 = int(first_elapsed_time)#int(relative_elapsed_time[0])
             tn = int(relative_elapsed_time[-1])
-            
+
             #step = 150 # 2.5 minute fixed step. Can be reduced or increased depending on required granularity
 
             h_ep = []
             #mindatas = []
             for mcat in mcats:
-                
+
                 mindata = []
                 for i in range(t0, tn, step):
-                    li = [a for d,a in zip(relative_elapsed_time, rest) if (d>=i and d<(i+step)) and a[1] == mcat]  
+                    li = [a for d,a in zip(relative_elapsed_time, rest) if (d>=i and d<(i+step)) and a[1] == mcat]
                     mindata.append(li) # alerts per 'step' seconds
 
                 #print([len(x) for x in mindata])
                 episodes = []
-                
-                
+
+
                 episodes = getepisodes(mindata, micro[mcat], False)
 
                 if len(episodes) > 0:
-                    
+
                     events  = [len(x) for x in mindata]
-                   
+
                     minute_info = [(x[0]*step+t0, x[1]*step+t0) for x in episodes]
 
                     raw_ports = []
                     raw_sign = []
-                    
+
                     for e in mindata:
                         if len(e) > 0:
                             raw_ports.append([(x[3]) for x in e])
@@ -1951,15 +1953,15 @@ def aggregate_into_episodes(unparse, team_labels, step=150):
 
                     _flat_ports = [item for sublist in raw_ports for item in sublist]
 
-                    episode = [(mi[0], mi[1], mcat, events[x[0]:x[1]+1], 
-                                   raw_ports[x[0]:x[1]+1], raw_sign[x[0]:x[1]+1]) 
+                    episode = [(mi[0], mi[1], mcat, events[x[0]:x[1]+1],
+                                   raw_ports[x[0]:x[1]+1], raw_sign[x[0]:x[1]+1])
                                  for x,mi in zip(episodes, minute_info)] # now the start and end are actual elapsed times
-                    
+
                     #EPISODE DEF: (startTime, endTime, mcat, len(rawevents), volume(alerts), epiPeriod, epiServices, list of unique signatures)
                     episode = [(x[0], x[1], x[2], x[3], round(sum(x[3])/float(len(x[3])),1), (x[1]-x[0]),
                                 [item for sublist in x[4] for item in sublist], list(set([item for sublist in x[5] for item in sublist]))) for x in episode]
-                    
-                    h_ep.extend(episode) 
+
+                    h_ep.extend(episode)
 
             if len(h_ep) == 0:
                 continue
@@ -2001,15 +2003,15 @@ def aggregate_into_episodes(unparse, team_labels, step=150):
                     plt.yticks(range(len(mcats)), mcats_lab, rotation='0')
                 legend_without_duplicate_labels(ax)
                 plt.grid(True, alpha=0.4)
-                
+
                 #plt.tight_layout()
                 #plt.savefig('Pres-Micro-attack-episodes-Team'+str(tid) +'-Connection'+ attacker[0]+'--'+attacker[1]+'.png')
                 plt.show()
-        
+
         team_episodes.append(t_ep)
         team_times.append(_team_times)
     return (team_episodes, team_times)
-            
+
 ## 17
 
 #### Host = [connections] instead of team level representation
@@ -2030,31 +2032,31 @@ def host_episode_sequences(team_episodes):
             #print(perp)
             #if ('10.0.0' in perp or '10.0.1' in perp):
             #        continue
-            
+
             att = 't'+str(tid)+'-'+perp
             #print(att)
             if att not in host_data.keys():
-                host_data[att] = []  
+                host_data[att] = []
             #EPISODE DEF: (startTime, endTime, mcat, len(rawevents), volume(alerts), epiPeriod, epiServices, list of unique signatures)
             ext = [(x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], vic) for x in episodes]
 
             host_data[att].append(ext)
             host_data[att].sort(key=lambda tup: tup[0][0])
-            
-    print('\n# episode sequences ', len(host_data))   
+
+    print('\n# episode sequences ', len(host_data))
 
     team_strat = list(host_data.values())
     #print(len(team_strat[0]), [(len(x)) for x in team_strat[0]])
-    #print([[a[2] for a in x] for x in team_strat[0]])  
-    return (host_data)        
+    #print([[a[2] for a in x] for x in team_strat[0]])
+    return (host_data)
 
-def break_into_subbehaviors(host_data):        
+def break_into_subbehaviors(host_data):
     attackers = []
     keys = []
     alerts = []
     cutlen = 4
     FULL_SEQ= False
-        
+
     #print(len(team))
     print('----- Sub-sequences -----')
     for tid, (atta,victims) in enumerate(host_data.items()):
@@ -2093,12 +2095,12 @@ def break_into_subbehaviors(host_data):
                         #pass
                     else:
                         rest = (-1,-1)
-                       
+
                         for i in range(len(cuts)):
                             start, end = 0, 0
                             if i == 0:
                                 start = 0
-                                end = cuts[i]  
+                                end = cuts[i]
                             else:
                                 start = cuts[i-1]+1
                                 end = cuts[i]
@@ -2124,7 +2126,7 @@ def break_into_subbehaviors(host_data):
     print('\n# sub-sequences', len(keys))
     return (alerts, keys)
 
-## 27 Aug 2020: Generating traces for flexfringe 
+## 27 Aug 2020: Generating traces for flexfringe
 def generate_traces(alerts, keys, datafile, test_ratio=0.0):
     victims = alerts
     al_services = [[most_frequent(y[6]) for y in x] for x in victims]
@@ -2168,7 +2170,7 @@ def generate_traces(alerts, keys, datafile, test_ratio=0.0):
         f.write(st)
     f.close()
     #print(lengths, lengths/float(count_lines))
-    
+
 ## 2 sept 2020: Learning the model
 def flexfringe(*args, **kwargs):
   """Wrapper to call the flexfringe binary
@@ -2176,7 +2178,7 @@ def flexfringe(*args, **kwargs):
    Keyword arguments:
    position 0 -- input file with trace samples
    kwargs -- list of key=value arguments to pass as command line arguments
-  """  
+  """
   command = ["--help"]
 
   if(len(kwargs) >= 1):
@@ -2187,30 +2189,30 @@ def flexfringe(*args, **kwargs):
   result = subprocess.run(["FlexFringe/flexfringe",] + command + [args[0]], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
   print(result.returncode, result.stdout, result.stderr)
 
-  
+
   try:
     with open("dfafinal.dot") as fh:
       return fh.read()
   except FileNotFoundError:
     pass
-  
+
   return "No output file was generated."
 
-   
+
 def loadmodel(modelfile):
 
   """Wrapper to load resulting model json file
 
    Keyword arguments:
    modelfile -- path to the json model file
-  """  
+  """
 
   # because users can provide unescaped new lines breaking json conventions
   # in the labels, we are removing them from the label fields
   with open(modelfile) as fh:
     data = fh.read()
   data = re.sub( r'\"label\" : \"([^\n|]*)\n([^\n]*)\"', r'"label" : "\1 \2"', data )
-  
+
   data = data.replace('\n', '').replace(',,', ',')#.replace(', ,', ',')#.replace('\t', ' ')
 
 
@@ -2235,7 +2237,7 @@ def traverse(dfa, sinks, sequence, statelist=False):
    Keyword arguments:
    dfa -- loaded model
    sequence -- space-separated string to accept/reject in dfa
-  """  
+  """
   #print(dfa)
   #in_main_model = set()
   sev_sinks = set()
@@ -2244,12 +2246,12 @@ def traverse(dfa, sinks, sequence, statelist=False):
   #print('This seq', sequence.split(" "))
   for event in sequence.split(" "):
       sym = event.split(":")[0]
-      
-      #print('curr symbol ', sym, 'state no.', dfa[state][sym]) 
-      
+
+      #print('curr symbol ', sym, 'state no.', dfa[state][sym])
+
       state = dfa[state][sym]
       isred = 0
-      
+
       if state != "":
          isred = dfa[state[0]]["isred"]
       #print(state)
@@ -2277,7 +2279,7 @@ def traverse(dfa, sinks, sequence, statelist=False):
           #print('curr sym', sym)
           #print('previous state no.:', stlst[-1], 'results in sink id:', sinks[stlst[-1]][sym] )
           #if sinks[stlst[-1]][sym] == "":
-                
+
                 #print('prob')
                 #print(sequence)
                 #state = '-1'
@@ -2296,7 +2298,7 @@ def traverse(dfa, sinks, sequence, statelist=False):
               state = state[0]
           except IndexError:
               print("Out of alphabet: alternatives")
-          
+
               stlst.append("-1")
               if not statelist:
                      return dfa[state]["type"] == "1"
@@ -2322,12 +2324,12 @@ def encode_sequences(m, m2):
              spl = line.split(' ')
         else:
             spl = line[:-1].split(' ')
-        
+
         line = ' '.join(spl[2:])
         #print(spl[2:])
         orig.append([(x) for x in spl[2:] if x != ''])
         traces.append(line)
-    num_sink = 0   
+    num_sink = 0
     total = 0
     state_traces = dict()
     for i,sample in enumerate(traces):
@@ -2339,21 +2341,21 @@ def encode_sequences(m, m2):
 
         total += len(s)
         true = [1 if x == '-1' else 0 for x in s]
-        
+
         num_sink += sum(true)
-        
+
         #print('encoded', sample, state_traces[i])
         assert (len(sample.split(' '))+1 == len(state_traces[i]))
 
     #print(len(traces), len(state_traces))
     print('Traces in sinks: ', num_sink, 'Total traces: ', total, 'Percentage: ',100*(num_sink/float(total)))
-    return (traces, state_traces)    
+    return (traces, state_traces)
 
 def find_severe_states(traces, m, m2):
     med_states = set()
     sev_states = set()
     sev_sinks = set()
-    for i,sample in enumerate(traces):    
+    for i,sample in enumerate(traces):
         r, s, sevsinks = traverse(m, m2, sample, statelist=True)
         sev_sinks.update(sevsinks)
         s = s[1:]
@@ -2372,15 +2374,15 @@ def find_severe_states(traces, m, m2):
     #print(sev_states)
     #print('med-sev traces')
     #for i,sample in enumerate(traces):
-    med_states = med_states.difference(sev_states)  
-        
+    med_states = med_states.difference(sev_states)
+
     #    r, s = traverse(m, m2, sample, statelist=True)
     #    s = [int(x) for x in s]
     #    #print(s)
     #    if not set(med_states).isdisjoint(s):
     #        print(sample)
     #        print('--', s)
-    print('Total medium states', len(med_states))  
+    print('Total medium states', len(med_states))
     print('Total severe states', len(sev_states))
     return(med_states, sev_states, sev_sinks)
 
@@ -2396,7 +2398,7 @@ def make_condensed_data(alerts, keys, state_traces, med_states, sev_states):
             continue
         #print(' ------------- COUNTER ', counter, '------')
         counter += 1
-        
+
         if '10.0.254' not in attacker:
             continue
         if ('147.75' in attacker or '69.172'  in attacker):
@@ -2406,19 +2408,19 @@ def make_condensed_data(alerts, keys, state_traces, med_states, sev_states):
         num_servs = [len(set((x[6]))) for x in episodes]
         max_servs = [most_frequent(x[6]) for x in episodes]
         #print(max_servs)
-        
+
         if 0 in tr and (not set(tr).isdisjoint(sev_states) or not set(tr).isdisjoint(med_states)):
             levelone.add(tr[tr.index(0)+1])
-       
-        #print([x[2] for x in episodes]) 
+
+        #print([x[2] for x in episodes])
         #print(state_traces[counter])
         new_state = (state_traces[counter][1:])[::-1]
-        
+
         #print(new_state, [x[2] for x in episodes])
         # also artifically add tiny delay so all events are not exactly at the same time.
         #print(len(episodes), new_state, max_servs)
         times = [(x[0], x[1], x[2], int(new_state[i]), max_servs[i], x[7]) for i,x in enumerate(episodes)] # start time, endtime, episode mas, state ID, most frequent service, list of unique signatures
-        
+
         step1 = attacker.split('->')
         step1_0 = step1[0].split('-')[0]
         step1_1 = step1[0].split('-')[1]
@@ -2429,7 +2431,7 @@ def make_condensed_data(alerts, keys, state_traces, med_states, sev_states):
         INV = False
         if '10.0.254' in step2:
             INV = True
-        
+
         if real_attacker not in condensed_data.keys() and real_attacker_inv not in condensed_data.keys():
             if INV:
                 condensed_data[real_attacker_inv] = []
@@ -2441,13 +2443,13 @@ def make_condensed_data(alerts, keys, state_traces, med_states, sev_states):
         else:
             condensed_data[real_attacker].extend(times)
             condensed_data[real_attacker].sort(key=lambda tup: tup[0])  # sorts in place based on starting times
-        
+
     #print(len(condensed_data), counter)
     #print([c for c in condensed_data.values()][:5])
-      
+
     #print('High-severity objective states', levelone, len(levelone))
     return condensed_data
-    
+
 
 def make_state_groups(condensed_data, datafile):
     state_groups = {
@@ -2469,22 +2471,22 @@ def make_state_groups(condensed_data, datafile):
                     break
             if not FOUND:
                 print('--- not found', s)'''
-        
+
         for i,st in enumerate(state):
             #print(state[i])
             macro = micro2macro[micro[st[0]]].split('.')[1]
-            
+
             if st[1] == -1 or st[1] == 0: #state[i] == -1 or state[i] == 0:
                 continue
             if macro not in state_groups.keys():
                 state_groups[macro] = set()
-        
+
             state_groups[macro].add(st[1])
-            
-    #state_groups['ACTIVE_RECON'] = state_groups['ACTIVE_RECON'].difference(state_groups['PRIVLEDGE_ESC'])  
-    #state_groups['PASSIVE_RECON'] = state_groups['PASSIVE_RECON'].difference(state_groups['PRIVLEDGE_ESC'])  
-          
-    #print([(x) for x in state_groups.values()])      
+
+    #state_groups['ACTIVE_RECON'] = state_groups['ACTIVE_RECON'].difference(state_groups['PRIVLEDGE_ESC'])
+    #state_groups['PASSIVE_RECON'] = state_groups['PASSIVE_RECON'].difference(state_groups['PRIVLEDGE_ESC'])
+
+    #print([(x) for x in state_groups.values()])
     #print((all_states))
     model = open(datafile+".ff.final.dot", 'r')
     lines = model.readlines()
@@ -2502,7 +2504,7 @@ def make_state_groups(condensed_data, datafile):
                 pattern = '\D+(\d+)\s\[\slabel="\d.*'
                 SEARCH = re.match(pattern, line)
                 if SEARCH:
-                    
+
                     matched = int(SEARCH.group(1))
                     #print(matched)
                     if matched in states:
@@ -2547,8 +2549,8 @@ def make_state_groups(condensed_data, datafile):
                 '''
         outlines.append('}\n')
         #break
-        
-        
+
+
     for i,line in enumerate(lines):
         if i < 2:
             continue
@@ -2589,7 +2591,7 @@ def make_av_data(condensed_data):
         #print(tv)
         if tv not in condensed_a_data.keys():
             condensed_a_data[tv] = []
-            
+
         condensed_a_data[tv].extend(episodes)
         condensed_a_data[tv] = sorted(condensed_a_data[tv], key=lambda item: item[0])
         #print(len(condensed_a_data[tv]))
@@ -2613,9 +2615,9 @@ def translate(label, root=False):
         new_label += " | ID: "+parts[2]
 
     return new_label
-    
-## Per-objective attack graph for dot: 14 Nov (final attack graph) 
-def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile, expname):  
+
+## Per-objective attack graph for dot: 14 Nov (final attack graph)
+def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile, expname):
     tcols = {
         't0': 'maroon',
         't1': 'orange',
@@ -2627,7 +2629,7 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
         't7': 'tomato',
         't8': 'turquoise',
         't9': 'skyblue',
-        
+
     }
     if SAVE:
         try:
@@ -2639,19 +2641,19 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
             print("Can't create directory here")
         else:
             print("Successfully created directory for AGs")
-    
-    
-    
-    
+
+
+
+
 
     shapes = ['oval', 'oval', 'oval', 'box', 'box', 'box', 'box', 'hexagon', 'hexagon', 'hexagon', 'hexagon', 'hexagon']
     in_main_model = [[episode[3] for episode in sequence] for sequence in condensed_data.values()] # all IDs in the main model (including high-sev sinks)
     in_main_model = set([item for sublist in in_main_model for item in sublist])
-    
+
     ser_total = dict()
     simple = dict()
     total_victims = set([x.split('-')[1] for x in list(condensed_v_data.keys())]) # collect all victim IPs
-    
+
     OBJ_ONLY = False # Experiment 1: mas+service or only mas?
     attacks = set()
     for episodes in condensed_data.values(): # iterate over all episodes and collect the objective nodes.
@@ -2665,20 +2667,20 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
                     vert_name = cat+'|'+ep[4] # cat + service
                 attacks.add(vert_name)
     attacks = list(attacks)
-        
+
     for int_victim in total_victims:  # iterate over every victim
         print('\n!!! Rendering AGs for Victim ', int_victim,'\n',  sep=' ', end=' ', flush=True)
         for attack in attacks: # iterate over every attack
             print('\t!!!! Objective ', attack,'\n',  sep=' ', end=' ', flush=True)
             collect = dict()
-            
+
             team_level = dict()
             observed_obj = set() # variants of current objective
             nodes = {}
             vertices, edges = 0, 0
             for att,episodes in condensed_data.items(): # iterate over (a,v): [episode, episode, episode]
                 if int_victim not in att: # if it's not the right victim, then don't process further
-                    continue  
+                    continue
                 vname_time = []
                 for ep in episodes:
                     start_time = round(ep[0]/1.0)
@@ -2690,14 +2692,14 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
                         stateID = '' if len(str(ep[2])) == 1 else '|'+str(ep[3])
                     else:
                         stateID = '|Sink'
-                    
+
                     vert_name = cat + '|'+ ep[4] + stateID
-                    
+
                     vname_time.append((vert_name, start_time, end_time, signs))
-                    
+
                 if not sum([True if attack in x[0] else False for x in vname_time]): # if the objective is never reached, don't process further
                     continue
-                    
+
                 # if it's an episode sequence targetting the requested victim and obtaining the requested objective,
                 attempts = []
                 sub_attempt = []
@@ -2714,7 +2716,7 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
                 team_attacker = att.split('->')[0] # team+attacker
                 if team_attacker not in team_level.keys():
                     team_level[team_attacker] = []
-                    
+
                 team_level[team_attacker].extend(attempts)
                 #team_level[team_attacker] = sorted(team_level[team_attacker], key=lambda item: item[1])
             #print(observed_obj)
@@ -2730,12 +2732,12 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
             root_node = translate(attack, root=int_victim)
             lines.append((0, '"'+root_node+'" [shape=doubleoctagon, style=filled, fillcolor=salmon];'))
             lines.append((0, '{ rank = max; "'+root_node+'"}'))
-            
+
             for obj in list(observed_obj): # for each variant of objective, add a link to the root node, and determine if it's sink
                 lines.append((0,'"'+translate(obj)+'" -> "'+root_node+'"'))
-                
+
                 sinkflag = False
-                for sink in sev_sinks:    
+                for sink in sev_sinks:
                     if obj.endswith(sink):
                         sinkflag = True
                         break
@@ -2743,7 +2745,7 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
                     lines.append((0,'"'+translate(obj)+'" [style="filled,dotted", fillcolor= salmon]'))
                 else:
                     lines.append((0,'"'+translate(obj)+'" [style=filled, fillcolor= salmon]'))
-            
+
             samerank = '{ rank=same; "'+ '" "'.join([translate(x) for x in observed_obj]) # all obj variants have the same rank
             samerank += '"}'
             lines.append((0,samerank))
@@ -2757,9 +2759,9 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
                 #print(unique)
                 #print('team', attackerID, 'total paths', len(attempts), 'unique paths', unique, 'longest path:', max([len(x) for x in attempts]), \
                 #     'shortest path:', min([len(x) for x in attempts]))
-                
+
                 #path_info[attack][attackerID].append((len(attempts), unique, max([len(x) for x in attempts]), min([len(x) for x in attempts])))
-                
+
                 for attempt in attempts: # iterate over each attempt
                     # record all nodes
                     for action in attempt:
@@ -2773,7 +2775,7 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
                                 lines.append((0,'"'+translate(vname)+'" [style="dotted,filled", fillcolor= yellow]'))
                             else:
                                 sinkflag = False
-                                for sink in sev_sinks:    
+                                for sink in sev_sinks:
                                     if vname.endswith(sink): # else if a high-sev sink, make dotted too
                                         sinkflag = True
                                         break
@@ -2800,7 +2802,7 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
                     bi = zip(attempt, attempt[1:]) # make bigrams (sliding window of 2)
                     for vid,((vname1,time1,etime1, signs1),(vname2,_,_, signs2)) in enumerate(bi): # for every bigram
                         if vid == 0: # first transition, add attacker IP
-                            lines.append((time1, '"'+translate(vname1)+'"' + ' -> ' + '"'+translate(vname2)+'" [ color='+color+'] '+'[label=<<font color="'+color+'">'+attackerID.split('-')[1]+'</font><br/> <font>'+str(time1) +'s</font>>]' 
+                            lines.append((time1, '"'+translate(vname1)+'"' + ' -> ' + '"'+translate(vname2)+'" [ color='+color+'] '+'[label=<<font color="'+color+'">'+attackerID.split('-')[1]+'</font><br/> <font>'+str(time1) +'s</font>>]'
                             #+ ' [tooltip=" From:\n'+ "\n    - ".join(signs1) + "\nTo:\n" + "\n    - ".join(signs2) +'"]'
                             ))
                         else:
@@ -2808,7 +2810,7 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
                             #+ ' [tooltip=" From:\n'+ "\n    - ".join(signs1) + "\nTo:\n" + "\n    - ".join(signs2) +'"]'
                             ))
 
-                            
+
             for vname, signatures in nodes.items(): # Go over all vertices again and define their shapes + make high-sev sink states dotted
                 mas = vname.split('|')[0]
                 mas = macro_inv[micro2macro['MicroAttackStage.'+mas]]
@@ -2817,7 +2819,7 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
                     lines.append((0,'"'+translate(vname)+'" [shape='+shape+']'))
                 else:
                     sinkflag = False
-                    for sink in sev_sinks:    
+                    for sink in sev_sinks:
                         if vname.endswith(sink):
                             sinkflag = True
                             break
@@ -2828,23 +2830,23 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
                 # add tooltip
                 lines.append((1, '"'+translate(vname)+'"'+' [tooltip="'+ "\n".join(signatures) +'"]'))
             lines.append((1000,'}'))
-            
+
             for l in lines: # count vertices and edges
                 if '->' in l[1]:
                     edges +=1
                 elif 'shape=' in l[1]:
                     vertices +=1
             simple[int_victim+'-'+AGname] = (vertices, edges)
-            
+
             #print('# vert', vertices, '# edges: ', edges,  'simplicity', vertices/float(edges))
             if SAVE:
-                out_f_name = datafile+'-attack-graph-for-victim-'+int_victim+'-'+AGname 
+                out_f_name = datafile+'-attack-graph-for-victim-'+int_victim+'-'+AGname
                 f = open(dirname+'/'+ out_f_name +'.dot', 'w')
                 for l in lines:
                     f.write(l[1])
                     f.write('\n')
                 f.close()
-                
+
                 os.system("dot -Tpng "+dirname+'/'+out_f_name+".dot -o "+dirname+'/'+out_f_name+".png")
                 os.system("dot -Tsvg "+dirname+'/'+out_f_name+".dot -o "+dirname+'/'+out_f_name+".svg")
                 if DOCKER:
@@ -2859,11 +2861,11 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
         #       print(t, val)
     #for attackerID,v in ser_total.items():
     #    print(attackerID, len(v), set([x.split('|')[0] for x in v]))
+        break
 
 
 
-
-## ----- main ------    
+## ----- main ------
 
 if len(sys.argv) < 5:
     print('USAGE: sage.py {path/to/json/files} {experiment_name} {alert_filtering_window (def=1.0)} {alert_aggr_window (def=150)} {(start_hour,end_hour)[Optional]}')
@@ -2885,15 +2887,15 @@ if len(sys.argv) > 5:
         print('Error parsing hour filter range')
         sys.exit()
 
-startTimes = [] # We cheat a bit: In case user filters to only see alerts from (s,e) range, 
+startTimes = [] # We cheat a bit: In case user filters to only see alerts from (s,e) range,
 #                    we record the first alert just to get the real time-elapsed since first alert
-    
+
 outaddress = ""
 path_to_ini = "FlexFringe/ini/spdfa-config.ini"
 
 modelname = expname+'.txt'#'test-trace-uni-serGroup.txt'
 datafile = expname+'.txt'#'trace-uni-serGroup.txt'
-   
+
 path_to_traces = datafile
 
 port_services = load_IANA_mapping()
@@ -2923,7 +2925,7 @@ os.system("dot -Tpng "+outfile+".ff.final.dot -o "+o+".png")
 #outfiles = [ modelname+'.ff.final.dot', modelname+'.ff.final.dot.json', modelname+'.ff.sinksfinal.json', modelname+'.ff.init_dfa.dot', modelname+'.ff.init_dfa.dot.json']
 #for (file,out) in zip(files,outfiles):
 #    copyfile(outaddress+file, outaddress+out)
-    
+
 path_to_model = outaddress+modelname
 
 print('------ !! Special: Fixing syntax error in main model and sink files  ---------')
@@ -2938,8 +2940,8 @@ if extracommas is not None:
     filedata = ''.join(filedata.rsplit(',', c))
     with open(path_to_model+".ff.finalsinks.json", 'w') as file:
         file.write(filedata)
-  
-print('--- Main')  
+
+print('--- Main')
 with open(path_to_model+".ff.final.json", 'r') as file:
     filedata = file.read()
 stripped = re.sub('[\s+]', '', filedata)
@@ -2957,9 +2959,9 @@ m, data = loadmodel(path_to_model+".ff.final.json")
 m2,data2 = loadmodel(path_to_model+".ff.finalsinks.json")
 
 print('------- Encoding into state sequences --------')
-# Encoding traces into state sequences  
+# Encoding traces into state sequences
 (traces, state_traces) = encode_sequences(m,m2)
-(med_states, sev_states, sev_sinks) = find_severe_states(traces, m, m2)    
+(med_states, sev_states, sev_sinks) = find_severe_states(traces, m, m2)
 condensed_data = make_condensed_data(alerts, keys, state_traces, med_states, sev_states)
 
 print('------- clustering state groups --------')
@@ -2982,4 +2984,4 @@ if DOCKER:
     os.system("rm "+"spdfa-clustered-"+datafile+"-dfa.dot")
 
 print('\n------- FIN -------')
-## ----- main END ------  
+## ----- main END ------
