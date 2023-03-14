@@ -9,12 +9,6 @@ RUN apt-get update \
 ##########################################
 COPY docker_stuff/requirements.txt /root
 
-RUN cd /root \
-&& mkdir input/
-
-COPY alerts/*.json /root/input/ 
-RUN chmod -R a+rw /root/input/
-
 
 ##########################################
 ######       INTALL DEPENDENCIES  ########
@@ -41,14 +35,18 @@ COPY docker_stuff/spdfa-config.ini /root/FlexFringe/ini/
 COPY docker_stuff/script.sh /root
 COPY docker_stuff/input.ini /root
 COPY docker_stuff/service-names-port-numbers.csv /root
+RUN cd /root && mkdir input/
+
+COPY alerts/*.json /root/input/ 
+RUN chmod -R a+rw /root/input/
 COPY src/sage.py /root
+
 ##########################################
 ###### EXECUTE AG GENERATOR & COPY #######
 ##########################################
-RUN cd root/ \
-	&& chmod +x script.sh
+RUN cd root/ && chmod +x script.sh
 
-WORKDIR root/
+WORKDIR /root/
 
 CMD ["./script.sh"]
 

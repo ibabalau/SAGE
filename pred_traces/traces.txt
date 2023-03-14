@@ -1,0 +1,281 @@
+280 122
+1 3 CnC|http infoD|http infoD|http
+1 3 vulnD|ncube-lm serD|unknown hostD|http
+1 3 vulnD|ncube-lm serD|unknown hostD|remoteware-cl
+1 4 uPrivEsc|cslistener vulnD|ncube-lm serD|unknown hostD|http
+1 3 vulnD|ncube-lm serD|unknown hostD|http
+1 3 vulnD|ncube-lm serD|unknown hostD|Unknown
+1 4 bfCred|pop3s vulnD|ncube-lm serD|unknown hostD|http
+1 8 hostD|asf-rmcp infoD|xdmcp hostD|http vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown hostD|http
+1 11 hostD|http vulnD|http serD|unknown hostD|asf-rmcp infoD|xdmcp vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown
+1 11 hostD|http vulnD|postgresql serD|unknown hostD|asf-rmcp infoD|xdmcp vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown
+1 10 vulnD|postgresql serD|unknown hostD|asf-rmcp infoD|xdmcp vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown
+1 14 hostD|http vulnD|postgresql serD|sip hostD|asf-rmcp infoD|xdmcp hostD|us-cli serD|sip vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown hostD|us-cli
+1 10 vulnD|postgresql serD|unknown hostD|asf-rmcp infoD|xdmcp vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown
+1 10 vulnD|postgresql serD|unknown hostD|asf-rmcp infoD|xdmcp vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown
+1 8 hostD|asf-rmcp infoD|xdmcp vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown
+1 4 bfCred|pop3s vulnD|ncube-lm serD|ag-swim hostD|http
+1 5 bfCred|pop3s vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 4 infoD|smtp infoD|xdmcp hostD|asf-rmcp hostD|http
+1 10 hostD|asf-rmcp infoD|xdmcp hostD|Unknown vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown hostD|Unknown
+1 10 hostD|asf-rmcp infoD|xdmcp hostD|http vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown hostD|http
+1 9 hostD|asf-rmcp infoD|xdmcp hostD|remoteware-cl vulnD|postgresql serD|unknown vulnD|mysql vulnD|ncube-lm serD|unknown hostD|remoteware-cl
+1 10 vulnD|postgresql serD|unknown hostD|asf-rmcp infoD|xdmcp vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown
+1 10 vulnD|postgresql serD|unknown hostD|asf-rmcp infoD|xdmcp vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown
+1 11 vulnD|postgresql vulnD|postgresql serD|unknown hostD|asf-rmcp infoD|xdmcp vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown
+1 10 vulnD|postgresql serD|unknown hostD|asf-rmcp infoD|xdmcp vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown
+1 10 hostD|asf-rmcp infoD|xdmcp hostD|http vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown hostD|http
+1 13 hostD|http vulnD|postgresql serD|unknown hostD|asf-rmcp infoD|xdmcp hostD|http vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown hostD|http
+1 8 hostD|asf-rmcp infoD|xdmcp vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown
+1 14 delivery|http exfil|http dManip|http resHJ|http ACE|http CnC|http remoteexp|http acctManip|http rPrivEsc|http infoD|http vulnD|postgresql serD|unknown hostD|http surf|http
+1 14 delivery|http exfil|http dManip|http resHJ|http ACE|http CnC|http remoteexp|http acctManip|http rPrivEsc|http infoD|http vulnD|postgresql serD|unknown hostD|http surf|http
+1 12 delivery|us-cli exfil|us-cli dManip|us-cli resHJ|us-cli ACE|us-cli remoteexp|us-cli acctManip|us-cli rPrivEsc|us-cli infoD|us-cli vulnD|us-cli surf|us-cli hostD|us-cli
+1 6 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|postgresql serD|sip
+1 6 vulnD|ncube-lm serD|rpas-c2 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 8 vulnD|ncube-lm serD|ag-swim vulnD|ncube-lm serD|dsd vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 6 vulnD|ncube-lm serD|cm vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 8 vulnD|ncube-lm serD|ag-swim vulnD|ncube-lm serD|unknown vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 6 vulnD|ncube-lm serD|ag-swim vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 7 infoD|http vulnD|ncube-lm serD|ag-swim vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 6 exfil|http ACE|http infoD|http vulnD|postgresql serD|unknown hostD|http
+1 12 delivery|wap-wsp exfil|wap-wsp dManip|wap-wsp resHJ|wap-wsp ACE|wap-wsp remoteexp|wap-wsp acctManip|wap-wsp rPrivEsc|wap-wsp infoD|wap-wsp vulnD|wap-wsp surf|wap-wsp hostD|wap-wsp
+1 14 delivery|http exfil|http dManip|http resHJ|http ACE|http CnC|http remoteexp|http acctManip|http rPrivEsc|http infoD|http vulnD|postgresql serD|unknown hostD|http surf|http
+1 14 delivery|http exfil|http dManip|http resHJ|http ACE|http CnC|http remoteexp|http acctManip|http rPrivEsc|http infoD|http vulnD|postgresql serD|unknown hostD|http surf|http
+1 12 delivery|Unknown exfil|Unknown dManip|Unknown resHJ|Unknown ACE|Unknown remoteexp|Unknown acctManip|Unknown rPrivEsc|Unknown infoD|Unknown vulnD|Unknown surf|Unknown hostD|Unknown
+1 14 delivery|http exfil|http dManip|http resHJ|http ACE|http CnC|http remoteexp|http acctManip|http rPrivEsc|http infoD|http vulnD|postgresql serD|unknown hostD|http surf|http
+1 14 delivery|http exfil|http dManip|http resHJ|http ACE|http CnC|http remoteexp|http acctManip|http rPrivEsc|http infoD|http vulnD|postgresql serD|unknown hostD|http surf|http
+1 11 exfil|etlservicemgr dManip|etlservicemgr resHJ|etlservicemgr ACE|etlservicemgr remoteexp|etlservicemgr acctManip|etlservicemgr rPrivEsc|etlservicemgr infoD|etlservicemgr vulnD|etlservicemgr surf|etlservicemgr hostD|etlservicemgr
+1 3 serD|ssh serD|ssh serD|ssh
+1 13 resHJ|remoteware-cl exfil|remoteware-cl dManip|remoteware-cl ACE|remoteware-cl remoteexp|remoteware-cl acctManip|remoteware-cl rPrivEsc|remoteware-cl infoD|remoteware-cl vulnD|remoteware-cl surf|remoteware-cl hostD|remoteware-cl vulnD|postgresql serD|unknown
+1 14 delivery|http exfil|http dManip|http resHJ|http ACE|http CnC|http remoteexp|http acctManip|http rPrivEsc|http infoD|http vulnD|postgresql serD|unknown hostD|http surf|http
+1 12 delivery|http exfil|http dManip|http resHJ|http ACE|http remoteexp|http acctManip|http rPrivEsc|http infoD|http vulnD|postgresql hostD|http surf|http
+1 11 exfil|http dManip|http resHJ|http ACE|http CnC|http remoteexp|http acctManip|http rPrivEsc|http infoD|http hostD|http surf|http
+1 14 delivery|http exfil|http dManip|http resHJ|http ACE|http CnC|http remoteexp|http acctManip|http rPrivEsc|http infoD|http vulnD|postgresql serD|unknown hostD|http surf|http
+1 14 delivery|http exfil|http dManip|http resHJ|http ACE|http CnC|http remoteexp|http acctManip|http rPrivEsc|http infoD|http vulnD|postgresql serD|dsd hostD|http surf|http
+1 12 delivery|http exfil|http dManip|http resHJ|http ACE|http remoteexp|http acctManip|http rPrivEsc|http infoD|http vulnD|postgresql hostD|http surf|http
+1 6 exfil|http ACE|http infoD|http vulnD|postgresql serD|unknown hostD|http
+1 12 delivery|wap-wsp exfil|wap-wsp dManip|wap-wsp resHJ|wap-wsp ACE|wap-wsp remoteexp|wap-wsp acctManip|wap-wsp rPrivEsc|wap-wsp infoD|wap-wsp vulnD|wap-wsp surf|wap-wsp hostD|wap-wsp
+1 11 exfil|http dManip|http ACE|http remoteexp|http acctManip|http rPrivEsc|http infoD|http vulnD|postgresql serD|unknown hostD|http surf|http
+1 5 exfil|etlservicemgr ACE|etlservicemgr rPrivEsc|etlservicemgr infoD|etlservicemgr hostD|etlservicemgr
+1 5 dManip|etlservicemgr resHJ|etlservicemgr remoteexp|etlservicemgr acctManip|etlservicemgr surf|etlservicemgr
+1 8 exfil|remoteware-cl ACE|remoteware-cl rPrivEsc|remoteware-cl infoD|remoteware-cl vulnD|remoteware-cl hostD|remoteware-cl vulnD|postgresql serD|unknown
+1 4 dManip|remoteware-cl resHJ|remoteware-cl remoteexp|remoteware-cl acctManip|remoteware-cl
+1 4 vulnD|postgresql serD|dsd vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|dsd vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|dsd vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|dsd vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|dsd vulnD|postgresql serD|unknown
+1 16 delivery|http exfil|http dManip|http resHJ|http ACE|http CnC|http remoteexp|http acctManip|http rPrivEsc|http infoD|http serD|dsd hostD|http surf|http vulnD|http vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|dsd vulnD|postgresql serD|unknown
+1 16 delivery|http exfil|http dManip|http resHJ|http ACE|http CnC|http remoteexp|http acctManip|http rPrivEsc|http infoD|http serD|dsd hostD|http surf|http vulnD|http vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|dsd vulnD|postgresql serD|unknown
+1 3 vulnD|postgresql vulnD|postgresql vulnD|postgresql
+1 3 CnC|http infoD|http infoD|http
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|dsd
+1 13 netDOS|http infoD|http surf|http hostD|http vulnD|postgresql serD|unknown infoD|us-cli surf|us-cli hostD|us-cli vulnD|postgresql serD|unknown vulnD|ncube-lm serD|dsd
+1 8 serD|unknown hostD|us-cli infoD|us-cli vulnD|postgresql serD|unknown surf|us-cli infoD|us-cli surf|us-cli
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|dsd
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|dsd
+1 8 surf|commplex-main infoD|commplex-main vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|dsd
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|dsd
+1 9 netDOS|http infoD|http surf|http vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|dsd
+1 8 vulnD|ncube-lm serD|rpas-c2 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|dsd
+1 8 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|dsd
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|dsd
+1 11 netDOS|http infoD|http surf|http hostD|http vulnD|ncube-lm serD|unknown hostD|http vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|dsd
+1 3 netDOS|http infoD|http surf|http
+1 3 vulnD|ncube-lm serD|unknown hostD|http
+1 5 infoD|remoteware-cl surf|remoteware-cl vulnD|ncube-lm serD|unknown hostD|remoteware-cl
+1 4 bfCred|Unknown vulnD|ncube-lm serD|unknown hostD|http
+1 3 vulnD|ncube-lm serD|unknown hostD|http
+1 6 netDOS|http infoD|http surf|http vulnD|ncube-lm serD|unknown hostD|etlservicemgr
+1 4 surf|http vulnD|ncube-lm serD|unknown hostD|etlservicemgr
+1 4 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown
+1 3 vulnD|ncube-lm serD|unknown hostD|Unknown
+1 6 netDOS|http infoD|http surf|http vulnD|ncube-lm serD|unknown hostD|wap-wsp
+1 13 delivery|http exfil|http dManip|http resHJ|http ACE|http CnC|http remoteexp|http acctManip|http rPrivEsc|http infoD|http vulnD|postgresql serD|ff-ice surf|http
+1 15 delivery|http exfil|http dManip|http resHJ|http ACE|http CnC|http remoteexp|http acctManip|http rPrivEsc|http infoD|http vulnD|http surf|http vulnD|ncube-lm serD|unknown serD|dsd
+1 14 delivery|http exfil|http dManip|http resHJ|http ACE|http CnC|http remoteexp|http acctManip|http rPrivEsc|http infoD|http vulnD|wap-wsp surf|http vulnD|ncube-lm serD|unknown
+1 4 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|ff-ice
+1 4 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown
+1 4 vulnD|ncube-lm serD|dsd vulnD|ncube-lm serD|unknown
+1 10 exfil|remoteware-cl dManip|remoteware-cl ACE|remoteware-cl remoteexp|remoteware-cl rPrivEsc|remoteware-cl infoD|remoteware-cl vulnD|remoteware-cl surf|remoteware-cl vulnD|ncube-lm serD|unknown
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|cm vulnD|ncube-lm serD|dsd
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|cm vulnD|ncube-lm serD|dsd
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|cm vulnD|ncube-lm serD|dsd
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|cm vulnD|ncube-lm serD|dsd
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|cm vulnD|ncube-lm serD|dsd
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|cm vulnD|ncube-lm serD|dsd
+1 20 delivery|http exfil|http dManip|http resHJ|us-cli ACE|http remoteexp|http acctManip|us-cli rPrivEsc|http infoD|http surf|us-cli hostD|us-cli vulnD|us-cli serD|sip vulnD|ncube-lm serD|cm hostD|us-cli vulnD|ncube-lm serD|cm vulnD|ncube-lm serD|dsd
+1 8 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|cm vulnD|ncube-lm serD|dsd
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|cm vulnD|ncube-lm serD|dsd
+1 8 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|cm vulnD|ncube-lm serD|rpas-c2 vulnD|ncube-lm serD|dsd
+1 7 hostD|http vulnD|postgresql serD|unknown hostD|asf-rmcp infoD|xdmcp vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 6 hostD|http vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown hostD|http
+1 4 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 5 exfil|Unknown infoD|Unknown vulnD|postgresql serD|unknown hostD|remoteware-cl
+1 5 exfil|Unknown infoD|Unknown hostD|remoteware-cl serD|unknown vulnD|postgresql
+1 4 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 8 hostD|us-cli serD|sip vulnD|postgresql serD|ff-ice hostD|us-cli serD|sip vulnD|postgresql serD|unknown
+1 4 bfCred|Unknown vulnD|postgresql serD|unknown hostD|http
+1 3 hostD|http vulnD|postgresql serD|unknown
+1 3 vulnD|postgresql serD|unknown hostD|Unknown
+1 4 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 3 vulnD|postgresql vulnD|postgresql serD|rfb
+1 4 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 5 exfil|http dManip|http remoteexp|http rPrivEsc|http vulnD|http
+1 3 hostD|http serD|unknown vulnD|postgresql
+1 3 hostD|http vulnD|postgresql serD|unknown
+1 3 vulnD|ncube-lm serD|rpas-c2 serD|unknown
+1 3 vulnD|ncube-lm serD|rpas-c2 serD|unknown
+1 3 vulnD|ncube-lm serD|rpas-c2 hostD|us-cli
+1 3 vulnD|ncube-lm serD|unknown hostD|http
+1 3 hostD|http vulnD|postgresql serD|unknown
+1 3 hostD|us-cli vulnD|postgresql serD|unknown
+1 3 vulnD|postgresql vulnD|postgresql serD|unknown
+1 11 delivery|http exfil|http rPrivEsc|http uPrivEsc|http infoD|http vulnD|http vulnD|http serD|ssh hostD|http vulnD|ncube-lm serD|unknown
+1 5 dManip|http ACE|http remoteexp|http PAexp|http serD|ssh
+1 6 dManip|http ACE|http remoteexp|http rPrivEsc|http vulnD|http serD|ssh
+1 11 delivery|http exfil|http dManip|http remoteexp|http PAexp|http infoD|http vulnD|http serD|ssh surf|http serD|ssh serD|ssh
+1 7 rPrivEsc|remoteware-cl uPrivEsc|remoteware-cl vulnD|remoteware-cl vulnD|postgresql serD|ssh vulnD|ncube-lm serD|unknown
+1 3 delivery|remoteware-cl exfil|remoteware-cl infoD|remoteware-cl
+1 3 ACE|remoteware-cl remoteexp|remoteware-cl vulnD|remoteware-cl
+1 14 exfil|http resHJ|http rPrivEsc|cslistener uPrivEsc|wap-wsp infoD|wap-wsp vulnD|wap-wsp surf|cslistener serD|ssh vulnD|http serD|ssh infoD|ssh hostD|http vulnD|ncube-lm serD|unknown
+1 6 delivery|wap-wsp dManip|http ACE|http remoteexp|cslistener PAexp|cslistener serD|ssh
+1 9 exfil|http dManip|http privEsc|http ACE|http remoteexp|cslistener TOexp|http acctManip|cslistener serD|ssh vulnD|cslistener
+1 13 delivery|cslistener dManip|cslistener ACE|http CnC|cslistener remoteexp|cslistener TOexp|http rPrivEsc|http infoD|cslistener vulnD|cslistener serD|ssh serD|ssh serD|ssh serD|ssh
+1 10 rPrivEsc|http uPrivEsc|etlservicemgr infoD|http vulnD|http surf|http vulnD|http serD|ssh hostD|etlservicemgr vulnD|ncube-lm serD|unknown
+1 7 delivery|http exfil|http dManip|http ACE|http remoteexp|http PAexp|http serD|ssh
+1 5 dManip|http ACE|http remoteexp|http rPrivEsc|http vulnD|http
+1 12 delivery|http exfil|http dManip|http ACE|etlservicemgr remoteexp|http PAexp|http TOexp|http infoD|http vulnD|http serD|ssh serD|ssh serD|ssh
+1 3 serD|ssh serD|ssh serD|ssh
+1 3 vulnD|postgresql vulnD|postgresql serD|unknown
+1 3 bfCred|pop3 vulnD|ncube-lm serD|unknown
+1 9 bfCred|Unknown vulnD|http serD|ff-ice infoD|ssh vulnD|mysql infoD|ssh vulnD|ncube-lm serD|unknown hostD|http
+1 7 exfil|http resHJ|http rPrivEsc|http infoD|http vulnD|http serD|ssh surf|http
+1 7 dManip|http privEsc|http ACE|http remoteexp|http PAexp|http TOexp|http acctManip|http
+1 6 netDOS|ssdp acctManip|snmp infoD|xdmcp vulnD|postgresql serD|unknown hostD|asf-rmcp
+1 6 netDOS|ssdp acctManip|snmp infoD|xdmcp vulnD|postgresql serD|unknown hostD|asf-rmcp
+1 6 netDOS|ssdp acctManip|snmp infoD|domain vulnD|postgresql serD|unknown hostD|asf-rmcp
+1 6 netDOS|ssdp acctManip|snmp infoD|xdmcp vulnD|postgresql serD|unknown hostD|asf-rmcp
+1 6 netDOS|ssdp acctManip|snmp infoD|xdmcp vulnD|postgresql serD|unknown hostD|asf-rmcp
+1 6 netDOS|ssdp acctManip|snmp infoD|xdmcp vulnD|postgresql serD|unknown hostD|asf-rmcp
+1 6 netDOS|ssdp acctManip|snmp infoD|xdmcp vulnD|postgresql serD|unknown hostD|asf-rmcp
+1 6 netDOS|ssdp acctManip|snmp infoD|xdmcp vulnD|postgresql serD|unknown hostD|asf-rmcp
+1 5 netDOS|ssdp acctManip|snmp infoD|xdmcp vulnD|postgresql hostD|asf-rmcp
+1 6 netDOS|ssdp acctManip|snmp infoD|xdmcp vulnD|postgresql serD|unknown hostD|asf-rmcp
+1 6 netDOS|ssdp acctManip|snmp infoD|xdmcp vulnD|postgresql serD|unknown hostD|asf-rmcp
+1 6 netDOS|ssdp acctManip|snmp infoD|xdmcp hostD|asf-rmcp vulnD|postgresql serD|unknown
+1 6 netDOS|ssdp acctManip|snmp infoD|xdmcp hostD|asf-rmcp vulnD|postgresql serD|unknown
+1 7 netDOS|ssdp acctManip|snmp bfCred|Unknown infoD|http hostD|asf-rmcp vulnD|postgresql serD|unknown
+1 4 exfil|http privEsc|http CnC|http rPrivEsc|http
+1 6 netDOS|ssdp acctManip|snmp infoD|xdmcp hostD|asf-rmcp vulnD|postgresql serD|unknown
+1 3 uPrivEsc|cslistener uPrivEsc|cslistener serD|ssh
+1 5 netDOS|ssdp acctManip|snmp infoD|xdmcp hostD|asf-rmcp vulnD|postgresql
+1 5 netDOS|ssdp acctManip|snmp infoD|xdmcp hostD|asf-rmcp vulnD|postgresql
+1 5 netDOS|ssdp acctManip|snmp infoD|xdmcp hostD|asf-rmcp vulnD|postgresql
+1 3 dManip|http remoteexp|http PAexp|http
+1 4 dManip|http remoteexp|http PAexp|http infoD|unknown
+1 3 CnC|http infoD|http infoD|http
+1 7 hostD|http hostD|http vulnD|postgresql serD|unknown vulnD|postgresql serD|dsd hostD|http
+1 6 CnC|http-alt vulnD|postgresql serD|unknown hostD|etlservicemgr vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 5 exfil|Unknown infoD|Unknown hostD|wap-wsp vulnD|postgresql serD|unknown
+1 5 exfil|Unknown infoD|Unknown hostD|wap-wsp vulnD|postgresql serD|unknown
+1 9 netDOS|http infoD|http surf|http hostD|Unknown vulnD|postgresql serD|unknown hostD|Unknown vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 5 exfil|Unknown infoD|Unknown vulnD|postgresql serD|dsd hostD|remoteware-cl
+1 4 exfil|Unknown hostD|remoteware-cl vulnD|postgresql serD|unknown
+1 3 bfCred|Unknown vulnD|postgresql serD|unknown
+1 4 bfCred|Unknown vulnD|postgresql serD|unknown hostD|http
+1 5 rPrivEsc|smtp vulnD|ncube-lm serD|unknown hostD|http hostD|http
+1 6 hostD|asf-rmcp infoD|xdmcp infoD|xdmcp hostD|asf-rmcp vulnD|postgresql serD|ag-swim
+1 6 hostD|asf-rmcp infoD|xdmcp infoD|xdmcp hostD|asf-rmcp vulnD|postgresql serD|ff-ice
+1 6 hostD|asf-rmcp infoD|xdmcp infoD|xdmcp hostD|asf-rmcp vulnD|postgresql serD|ag-swim
+1 5 netDOS|http infoD|http surf|http vulnD|postgresql serD|ag-swim
+1 4 netDOS|http infoD|http serD|unknown surf|http
+1 7 netDOS|http infoD|http surf|http hostD|asf-rmcp infoD|xdmcp infoD|xdmcp hostD|asf-rmcp
+1 5 netDOS|http infoD|http surf|http vulnD|postgresql serD|ag-swim
+1 6 hostD|asf-rmcp infoD|xdmcp infoD|xdmcp hostD|asf-rmcp infoD|us-cli surf|us-cli
+1 6 hostD|asf-rmcp infoD|xdmcp infoD|xdmcp hostD|asf-rmcp vulnD|postgresql serD|ag-swim
+1 6 hostD|asf-rmcp infoD|xdmcp infoD|xdmcp hostD|asf-rmcp vulnD|postgresql serD|ff-ice
+1 6 hostD|asf-rmcp infoD|xdmcp infoD|xdmcp hostD|asf-rmcp vulnD|postgresql serD|ag-swim
+1 6 hostD|asf-rmcp infoD|xdmcp infoD|xdmcp hostD|asf-rmcp vulnD|postgresql serD|ag-swim
+1 6 hostD|asf-rmcp infoD|xdmcp infoD|xdmcp hostD|asf-rmcp vulnD|postgresql serD|rpas-c2
+1 6 hostD|asf-rmcp infoD|xdmcp infoD|xdmcp hostD|asf-rmcp vulnD|postgresql serD|ag-swim
+1 10 hostD|http vulnD|http serD|unknown hostD|http vulnD|postgresql serD|rpas-c2 vulnD|ncube-lm serD|ff-ice vulnD|ncube-lm serD|unknown
+1 8 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|rpas-c2 vulnD|ncube-lm serD|ff-ice vulnD|ncube-lm serD|unknown
+1 8 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|rpas-c2 vulnD|ncube-lm serD|ff-ice vulnD|ncube-lm serD|unknown
+1 8 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|rpas-c2 vulnD|ncube-lm serD|ff-ice vulnD|ncube-lm serD|unknown
+1 8 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|rpas-c2 vulnD|ncube-lm serD|ff-ice vulnD|ncube-lm serD|unknown
+1 11 hostD|us-cli vulnD|ncube-lm serD|sip hostD|us-cli vulnD|ncube-lm serD|rpas-c2 hostD|us-cli vulnD|ncube-lm serD|ff-ice vulnD|ncube-lm serD|unknown
+1 8 vulnD|postgresql serD|unknown vulnD|postgresql serD|rpas-c2 vulnD|ncube-lm serD|ff-ice vulnD|ncube-lm serD|unknown
+1 8 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|rpas-c2 vulnD|ncube-lm serD|ff-ice vulnD|ncube-lm serD|unknown
+1 8 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|rpas-c2 vulnD|ncube-lm serD|ff-ice vulnD|ncube-lm serD|unknown
+1 10 hostD|http vulnD|http serD|unknown hostD|http vulnD|postgresql serD|rpas-c2 vulnD|ncube-lm serD|ff-ice vulnD|ncube-lm serD|unknown
+1 14 hostD|http vulnD|ncube-lm serD|unknown hostD|http infoD|unknown vulnD|ncube-lm serD|rpas-c2 vulnD|postgresql serD|dsd hostD|http vulnD|ncube-lm serD|ff-ice vulnD|ncube-lm serD|unknown
+1 3 vulnD|ncube-lm serD|unknown hostD|remoteware-cl
+1 3 vulnD|ncube-lm serD|unknown hostD|http
+1 4 bfCred|pop3s vulnD|ncube-lm serD|unknown hostD|http
+1 3 vulnD|ncube-lm serD|unknown hostD|Unknown
+1 4 uPrivEsc|cslistener vulnD|ncube-lm serD|unknown hostD|http
+1 4 CnC|http vulnD|ncube-lm serD|unknown hostD|http
+1 4 netDOS|http uPrivEsc|cslistener infoD|http surf|http
+1 5 exfil|Unknown infoD|Unknown hostD|wap-wsp vulnD|postgresql serD|dsd
+1 3 uPrivEsc|cslistener uPrivEsc|cslistener uPrivEsc|cslistener
+1 5 exfil|Unknown infoD|Unknown hostD|remoteware-cl vulnD|postgresql serD|spt-automation
+1 3 netDOS|http infoD|http surf|http
+1 5 netDOS|http infoD|http surf|http vulnD|postgresql serD|unknown
+1 10 hostD|http vulnD|postgresql serD|spt-automation hostD|http vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|mysql serD|unknown
+1 3 netDOS|http infoD|http surf|http
+1 5 netDOS|http infoD|http surf|http vulnD|postgresql serD|unknown
+1 10 hostD|http vulnD|postgresql serD|spt-automation hostD|us-cli vulnD|postgresql serD|sip vulnD|ahsp vulnD|mysql vulnD|mysql serD|unknown
+1 10 vulnD|ncube-lm serD|spt-automation vulnD|postgresql serD|unknown vulnD|ahsp vulnD|mysql vulnD|mysql serD|unknown vulnD|postgresql serD|unknown
+1 13 hostD|http vulnD|postgresql serD|spt-automation hostD|http vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|mysql vulnD|mysql serD|unknown vulnD|postgresql serD|unknown
+1 12 vulnD|postgresql serD|spt-automation vulnD|postgresql serD|unknown vulnD|ahsp vulnD|mysql vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 10 vulnD|postgresql serD|spt-automation vulnD|postgresql serD|unknown vulnD|ahsp vulnD|mysql vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 10 vulnD|postgresql serD|spt-automation vulnD|postgresql serD|unknown vulnD|ahsp vulnD|mysql vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 10 vulnD|postgresql serD|spt-automation vulnD|postgresql serD|unknown vulnD|ahsp vulnD|mysql vulnD|mysql serD|unknown vulnD|postgresql serD|unknown
+1 11 vulnD|postgresql serD|spt-automation vulnD|postgresql serD|unknown vulnD|mysql vulnD|mysql serD|unknown infoD|commplex-main surf|commplex-main vulnD|postgresql serD|unknown
+1 12 vulnD|postgresql vulnD|postgresql vulnD|postgresql serD|spt-automation serD|unknown vulnD|postgresql vulnD|ahsp vulnD|mysql vulnD|mysql serD|unknown vulnD|postgresql serD|unknown
+1 13 hostD|http vulnD|postgresql serD|spt-automation hostD|http vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|mysql vulnD|mysql serD|unknown vulnD|postgresql serD|unknown
+1 6 netDOS|http infoD|http surf|http vulnD|postgresql serD|spt-automation hostD|http
+1 4 serD|ssh vulnD|postgresql serD|dsd hostD|etlservicemgr
+1 4 bfCred|pop3s vulnD|postgresql serD|unknown hostD|http
+1 6 vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown vulnD|postgresql serD|unknown
+1 8 vulnD|ncube-lm serD|unknown infoD|unknown vulnD|postgresql serD|unknown hostD|http vulnD|postgresql serD|unknown
+1 4 vulnD|postgresql serD|dsd vulnD|postgresql serD|unknown
+1 8 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|ssh vulnD|ncube-lm serD|spt-automation vulnD|postgresql serD|unknown
+1 8 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|ag-swim vulnD|postgresql serD|cm vulnD|postgresql serD|unknown
+1 10 vulnD|ncube-lm serD|rpas-c2 vulnD|postgresql serD|ssh vulnD|postgresql serD|unknown vulnD|mysql serD|unknown vulnD|postgresql serD|unknown
+1 4 vulnD|ncube-lm serD|ff-ice vulnD|postgresql serD|unknown
+1 4 vulnD|ncube-lm serD|unknown vulnD|postgresql serD|unknown
+1 8 vulnD|ncube-lm serD|cm hostD|us-cli vulnD|mysql serD|unknown hostD|us-cli vulnD|postgresql serD|sip
+1 4 vulnD|postgresql serD|spt-automation vulnD|postgresql serD|unknown
+1 6 vulnD|ncube-lm serD|spt-automation hostD|http hostD|http vulnD|postgresql serD|unknown
+1 6 hostD|http vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown hostD|http
+1 3 CnC|http CnC|http CnC|http
+1 3 exfil|Unknown exfil|Unknown infoD|Unknown
+1 4 exfil|Unknown infoD|Unknown vulnD|ncube-lm serD|ag-swim
+1 3 uPrivEsc|cslistener vulnD|ncube-lm serD|ag-swim
+1 14 infoD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown infoD|http hostD|asf-rmcp vulnD|postgresql serD|unknown vulnD|ncube-lm serD|unknown vulnD|postgresql serD|ads-c infoD|http
+1 5 infoD|http infoD|http vulnD|ncube-lm serD|ag-swim infoD|http
+1 7 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown infoD|unknown
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown
+1 11 vulnD|ncube-lm serD|unknown infoD|unknown vulnD|ncube-lm serD|unknown vulnD|postgresql serD|ag-swim vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown
+1 12 infoD|unknown vulnD|ncube-lm serD|unknown infoD|unknown vulnD|ncube-lm serD|unknown vulnD|postgresql serD|unknown vulnD|ncube-lm serD|ag-swim vulnD|ncube-lm serD|unknown
+1 6 vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown vulnD|ncube-lm serD|unknown
+1 3 vulnD|ncube-lm serD|ag-swim infoD|unknown
+1 4 hostD|us-cli vulnD|sip vulnD|ncube-lm serD|sip
