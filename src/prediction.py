@@ -1,3 +1,4 @@
+import time
 import os,re,operator, json, datetime, glob
 import statistics 
 import random
@@ -24,6 +25,7 @@ from collections import defaultdict
 import copy
 import queue
 
+
 def parse_file(f):
     fi = open(f, 'r')
     lines = fi.readlines()
@@ -34,15 +36,15 @@ def parse_file(f):
         sym = (line[:-1]).split(' ')
         traces.append(sym[2:])
     return traces
-    
-## 2 sept 2020: Learning the model
+
+
 def flexfringe(*args, **kwargs):
-    '''Wrapper to call the flexfringe binary
+    """Wrapper to call the flexfringe binary
 
     Keyword arguments:
     position 0 -- input file with trace samples
     kwargs -- list of key=value arguments to pass as command line arguments
-    '''  
+    """
     command = ['--help']
 
     if(len(kwargs) >= 1):
@@ -171,19 +173,20 @@ def traverse(dfa, sinks, sequence, statelist=False):
 # total_fail_no_trans_pos = 0
 # total_succ_root_node = 0
 # total_succ_entire_path = 0
-# cnt = 100
+# cnt = cnt
+from sklearn.utils import shuffle
+from sklearn.preprocessing import normalize
 
-def create_train_test_traces(trace_file, use_random = False):
+def create_train_test_traces(trace_file, use_random = False, pdfa = False):
     traces = parse_file(trace_file)
     trainlen, testlen = round(len(traces)*0.8), round(len(traces)*0.2)
     if use_random:
-        trainidx = random.sample(range(len(traces)), trainlen)
-        testidx = [x for x in range(len(traces)) if x not in trainidx]
-        train_data = [traces[i] for i in trainidx]
-        test_data = [traces[i] for i in testidx]
-    else:
-        train_data = traces[:trainlen]
-        test_data = traces[trainlen:]
+        traces = shuffle(traces)
+    if pdfa:
+        for trace in traces:
+            trace.reverse()
+    train_data = traces[:trainlen]
+    test_data = traces[trainlen:]
     print('Using', len(train_data), 'traces for training')
     print('Using', len(test_data), 'traces for testing')
 
@@ -198,7 +201,6 @@ def create_train_test_traces(trace_file, use_random = False):
     for i,trace in enumerate(train_data):
         count_lines += 1
         multi = trace
-        #multi.reverse()
         for e in multi:
             count_cats.add(e)
         st = '1' + ' '+ str(len(multi)) + ' ' + ' '.join(multi) + '\n'
@@ -258,7 +260,7 @@ def create_structs(data, unique_sym):
     spdfa = {}
     for node in data['nodes']:
         if node['data']['total_paths'] > 0:
-            spdfa[str(node['id'])] = {'total_cnt': node['size'], 'symbol': '', 'fin': node['data']['total_final'], 'paths': node['data']['total_paths'], 'transitions': {k: int(v) for k,v in dict(node['data']['trans_counts']).items()}}
+            spdfa[str(node['id'])] = {'total_cnt': node['size'], 'symbol': '', 'fin': node['data']['total_final'], 'paths': node['data']['total_paths'], 'transitions': {k: int(v) for k,v in dict(node['data']['trans_counts']).items() if int(v) != 0}}
         else:
             spdfa[str(node['id'])] = {'total_cnt': node['size'], 'symbol': '', 'fin': node['data']['total_final'], 'paths': 0, 'transitions': {}}
 
@@ -310,17 +312,17 @@ def find_probabilities(rev_spdfa, start_nodes, trace):
         q.put((node, trace, []))
     while not q.empty():
         node, tr, pr_list = q.get()
-        #print('current node', node, 'trace', tr, 'prob list', pr_list)
+        print('current node', node, 'trace', tr, 'prob list', pr_list)
         if tr == []:
             # end of trace reached, do stuff
-            #print('end of trace reached')
+            print('end of trace reached')
             final_probs.append((pr_list, rev_spdfa[node]['symbol']))
             continue
         current_symb = tr[0]
         # check next transitions
         if current_symb == rev_spdfa[node]['symbol']:
             for item in rev_spdfa[node]['transitions']:
-                # if firsy symbol, use ending prob, otheriwse normal prob
+                # if first symbol, use ending prob, otheriwse normal prob
                 if tr == trace:
                     q.put((item['target'], tr[1:], pr_list + [(node + '->' + item['target'], item['ending_prob'])]))
                 else:
@@ -329,69 +331,280 @@ def find_probabilities(rev_spdfa, start_nodes, trace):
             no_trans_cnt += 1
         else:
             no_symbol_cnt += 1
-            # current_as = current_symb.split('|')[0]
-            # actual_as = rev_spdfa[node]['symbol'].split('|')[0]
-            # if current_as == actual_as:
-            #     ind = np.argmax([item['prob'] for item in rev_spdfa[node]['transitions']])
-            #     q.put((rev_spdfa[node]['transitions'][ind]['target'], tr[1:], pr_list + [(node + '->' + rev_spdfa[node]['transitions'][ind]['target'], rev_spdfa[node]['transitions'][ind]['prob'])]))
+            current_as = current_symb.split('|')[0]
+            actual_as = rev_spdfa[node]['symbol'].split('|')[0]
+            if current_as == actual_as:
+                ind = np.argmax([item['prob'] for item in rev_spdfa[node]['transitions']])
+                q.put((rev_spdfa[node]['transitions'][ind]['target'], tr[1:], pr_list + [(node + '->' + rev_spdfa[node]['transitions'][ind]['target'], rev_spdfa[node]['transitions'][ind]['prob'])]))
     return final_probs, 0 if no_symbol_cnt > no_trans_cnt else 1
 
-def multiplyList(myList) :
-    # Multiply elements one by one
-    result = 1
-    for y, x in myList:
-        result = result * x
-    return result
+from enum import Enum
+class Strategy(Enum):
+    FULL_MATCH = 1
+    AS_MATCH = 2
+    ALL = 3
 
-def test_prediction(rev_spdfa, test_data):
-    no_path_cnt = 0
-    no_next_action_cnt = 0
-    fail_no_start_symb_cnt = 0
-    fail_no_symbol_cnt = 0
-    fail_no_transition_cnt = 0
-    succ_cnt = 0
+
+def find_probabilities_fuzzing(rev_spdfa, start_nodes, trace, use_factor, strategy = Strategy.ALL):
+    # q.put and q.get
+    q = queue.Queue()
+    final_probs = []
+    found_symbol = [0 for x in range(len(trace))]
+    found_symbol[0] = 1
+    prob_to_redis = []
+    for node in start_nodes:
+        q.put((node, trace, [], 1))
+    counter = {}
+    cnt = 0
+    while not q.empty():
+        cnt += 1
+        node, tr, path, prob = q.get()
+        key = (node, frozenset(tr))
+        if key in counter:
+            counter[key] += 1
+        else:
+            counter[key] = 1
+        factor = 1
+        #print('current node', node, 'trace', tr, 'prob list', pr_list)
+        if not tr:
+            # end of trace reached, do stuff
+            #print('end of trace reached')
+            final_probs.append((prob, path, rev_spdfa[node]['symbol']))
+            continue
+        current_symb = tr[0]
+        # check next transitions
+        if rev_spdfa[node]['symbol'] == '':
+            prob_to_redis.append(prob)
+        else:
+            current_as = current_symb.split('|')[0]
+            actual_as = rev_spdfa[node]['symbol'].split('|')[0]
+            if use_factor:
+                if current_symb == rev_spdfa[node]['symbol']:
+                    factor = 50
+                elif current_as == actual_as:
+                    factor = 25
+            if current_symb == rev_spdfa[node]['symbol'] or current_as == actual_as:
+                found_symbol[len(trace) - len(tr)] = 1
+            # if first symbol, use ending prob, otheriwse normal prob
+            if tr == trace:
+                prob_key = 'ending_prob'
+            else:
+                prob_key = 'prob'
+
+            if strategy == Strategy.FULL_MATCH:
+                if current_symb == rev_spdfa[node]['symbol']:
+                    for item in rev_spdfa[node]['transitions']:
+                        q.put((item['target'], tr[1:], path + [node + '->' + item['target'] + '_' + rev_spdfa[node]['symbol']], prob * item[prob_key] * factor))
+                else:
+                    prob_to_redis.append(prob)
+            elif strategy == Strategy.AS_MATCH:
+                if current_symb == rev_spdfa[node]['symbol'] or current_as == actual_as:
+                    for item in rev_spdfa[node]['transitions']:
+                        q.put((item['target'], tr[1:], path + [node + '->' + item['target'] + '_' + rev_spdfa[node]['symbol']], prob * item[prob_key] * factor))
+                else:
+                    prob_to_redis.append(prob)
+            else:
+                for item in rev_spdfa[node]['transitions']:
+                    q.put((item['target'], tr[1:], path + [node + '->' + item['target'] + '_' + rev_spdfa[node]['symbol']], prob * item[prob_key] * factor))
+    
+    sorted_pairs = sorted(counter.items(), key=lambda x: x[1], reverse=True)[:20]
+    print('total', cnt)
+    for i in sorted_pairs:
+        print(i)
+    return final_probs, prob_to_redis
+
+
+def find_probabilities_fuzzing_dfs(rev_spdfa, start_nodes, trace, use_factor, strategy = Strategy.ALL, final_probs = [], prob_to_redis = []):
+    if trace == []:
+        # end of trace reached, do stuff
+        final_probs.append((prob, path, rev_spdfa[node]['symbol']))
+    factor = 1
+    current_symb = tr[0]
+    # check next transitions
+    if rev_spdfa[node]['symbol'] == '':
+        prob_to_redis.append(prob)
+    else:
+        current_as = current_symb.split('|')[0]
+        actual_as = rev_spdfa[node]['symbol'].split('|')[0]
+        if use_factor:
+            if current_symb == rev_spdfa[node]['symbol']:
+                factor = 50
+            elif current_as == actual_as:
+                factor = 25
+        if current_symb == rev_spdfa[node]['symbol'] or current_as == actual_as:
+            found_symbol[len(trace) - len(tr)] = 1
+        # if first symbol, use ending prob, otheriwse normal prob
+        if tr == trace:
+            prob_key = 'ending_prob'
+        else:
+            prob_key = 'prob'
+
+        if strategy == Strategy.FULL_MATCH:
+            if current_symb == rev_spdfa[node]['symbol']:
+                for item in rev_spdfa[node]['transitions']:
+                    q.put((item['target'], tr[1:], path + [node + '->' + item['target'] + '_' + rev_spdfa[node]['symbol']], prob * item[prob_key] * factor))
+            else:
+                prob_to_redis.append(prob)
+        elif strategy == Strategy.AS_MATCH:
+            if current_symb == rev_spdfa[node]['symbol'] or current_as == actual_as:
+                for item in rev_spdfa[node]['transitions']:
+                    q.put((item['target'], tr[1:], path + [node + '->' + item['target'] + '_' + rev_spdfa[node]['symbol']], prob * item[prob_key] * factor))
+            else:
+                prob_to_redis.append(prob)
+        else:
+            for item in rev_spdfa[node]['transitions']:
+                q.put((item['target'], tr[1:], path + [node + '->' + item['target'] + '_' + rev_spdfa[node]['symbol']], prob * item[prob_key] * factor))
+
+
+def test_pred_sum(spdfa, rev_spdfa, test_traces):
     tp_cnt = 0
-    for test_trace in test_data:
+    tp_as_cnt = 0
+    skip_cnt = 0
+    no_start_cnt = 0
+    fin_tt = []
+    for test_trace in test_traces:
+        if len(test_trace) < 8 and test_trace[0] in symbol_to_state:
+            fin_tt.append(test_trace)
+    fin_tt = sorted(fin_tt, key=len)
+    print(len(fin_tt))
+    fin_tt = [['serD|ssh', 'serD|ssh', 'serD|unknown', 'vulnD|postgresql']]
+    fin_tt[0].reverse()
+    #test_trace = ['vulnD|ahsp', 'serD|unknown', 'vulnD|postgresql', 'serD|unknown', 'vulnD|ahsp', 'vulnD|ahsp', 'vulnD|postgresql', 'vulnD|postgresql', 'serD|unknown', 'serD|cm', 'vulnD|ahsp', 'vulnD|ahsp', 'serD|ag-swim', 'vulnD|ms-sql-s']
+    for test_trace in fin_tt:
         test_trace.reverse()
         true_action = test_trace[-1]
         test_trace = test_trace[:-1]
         print('---------------------------TESTING----------------------------')
-        print('reversed input trace:', test_trace)
-        if test_trace[0] not in symbol_to_state:
-            fail_no_start_symb_cnt += 1
-            continue
+        print('reversed input trace:', test_trace, 'LENGHT', len(test_trace))
         start_nodes = list(symbol_to_state[test_trace[0]])
+        # optimization: remove starting nodes where starting prob is 0, cause entire trace is gonna be 0 anyway
+        start_nodes = [node for node in start_nodes if spdfa[node]['fin'] != 0]
+        if start_nodes == []:
+            no_start_cnt += 1
+            continue
         print('starting nodes', start_nodes)
-        prob_list, reason = find_probabilities(rev_spdfa, start_nodes, test_trace)
-        if prob_list != []:
-            probs_multiplied = [multiplyList(probs) for probs, _ in prob_list]
-            mp_ind = np.argmax(probs_multiplied)
-            print('true action is', true_action, 'predicted next action is', prob_list[mp_ind][1] if prob_list[mp_ind][1] != '' else 'none', 'with probability', probs_multiplied[mp_ind])
-            print('node path in reversed spdfa', prob_list[mp_ind][0])
-            if (prob_list[mp_ind][1] == ''):
-                no_next_action_cnt += 1
-                print('ROOT NODE')
+        
+        strat = Strategy.ALL
+        use_scaling = True
+        start_time = time.time()
+        prob_list, prob_to_redistribute = find_probabilities_fuzzing(rev_spdfa, start_nodes, test_trace, use_scaling, strat)
+        print('EXECUTION TIME', time.time() - start_time, 'seconds')
+        print('FOUND', len(prob_list), 'PATHS AND ', len(prob_to_redistribute), 'WHICH END IN ROOT')
+        if prob_list == []:
+            skip_cnt += 1
+            print('NO PATH FOUND')
+            continue
+        # normalization
+        probs_to_scale = [probs for probs, _, _ in prob_list]
+        if prob_to_redistribute != []:
+            probs_to_scale += prob_to_redistribute
+        s =  np.sum(probs_to_scale)
+        normalized = [x/s for x in probs_to_scale]
+        probs_multiplied = normalized[:len(prob_list)]
+        
+        # redistribution
+        total_red = 0
+        if prob_to_redistribute != []:
+            prob_to_redistribute = normalized[-len(prob_to_redistribute):]
+            probs_sum = np.sum(probs_multiplied) + np.sum(prob_to_redistribute)
+            #print('PROB SUM', probs_sum)
+            if probs_sum < 0.99 or probs_sum > 1.01:
+                print('ERR')
+                exit()
+            total_red = np.sum(prob_to_redistribute)/len(prob_list)
+        
+        # finding next action
+        next_actions = {}
+        for prob, path, na in prob_list:
+            prob += total_red
+            if na in next_actions:
+                next_actions[na] += prob
             else:
-                succ_cnt += 1
-                if prob_list[mp_ind][1] == true_action:
-                    tp_cnt += 1
-        else:
-            print('No valid paths found')
-            if reason == 0:
-                fail_no_symbol_cnt += 1
-            else:
-                fail_no_transition_cnt += 1
+                next_actions[na] = prob
+        sorted_pairs = sorted(next_actions.items(), key=lambda x: x[1], reverse=True)[:5]
+        # print('top 5 actions')
+        # for i in sorted_pairs:
+        #     print(i)
+        print('PREDICTED ACTION', sorted_pairs[0])
+        print('TRUE ACTION', true_action)
+        pred = sorted_pairs[0]
+        if pred[0] == true_action:
+            tp_cnt += 1
+            tp_as_cnt += 1
+        elif get_attack_stage(pred[0]) == get_attack_stage(true_action):
+            tp_as_cnt += 1
         print('--------------------------------------------------------------\n')
+    final_len = len(fin_tt)
+    print('skipped', skip_cnt)
+    print('no start after opti', no_start_cnt)
+    print('tested on ', final_len, 'traces')
+    return tp_cnt/final_len, tp_as_cnt/final_len
+    
+def get_attack_stage(symbol):
+    return symbol.split('|')[0]
 
-    test_tr_len = len(test_data)
-    print('Total unique test traces', test_tr_len)
-    print('Fail because starting symbol not found', fail_no_start_symb_cnt, fail_no_start_symb_cnt/test_tr_len)
-    print('Fail because next symbol not found while following trace', fail_no_symbol_cnt, fail_no_symbol_cnt/test_tr_len)
-    print('Fail because no more transition possible while following trace', fail_no_transition_cnt, fail_no_transition_cnt/test_tr_len)
-    print('Successfully followed entire trace but no more transitions possible (root node)', no_next_action_cnt, no_next_action_cnt/test_tr_len)
-    print('Successfully followed entire trace', succ_cnt, succ_cnt/test_tr_len, 'from which', tp_cnt, 'are true positives')
 
+def find_path(pdfa, trace):
+    node = '0'
+    prob = 1
+    for symbol in trace:
+        print('symbol', symbol, 'node', node)
+        true_as = get_attack_stage(symbol)
+        if symbol in pdfa[node]['transitions']:
+            prob *= pdfa[node]['transitions'][symbol]['count']/pdfa[node]['paths']
+            node = pdfa[node]['transitions'][symbol]['dnode']
+        else:
+            flag = 0
+            for poss_symb in pdfa[node]['transitions'].keys():
+                a_stage = get_attack_stage(poss_symb)
+                if a_stage == true_as:
+                    prob *= pdfa[node]['transitions'][poss_symb]['count']/pdfa[node]['paths']
+                    node = pdfa[node]['transitions'][poss_symb]['dnode']
+                    flag = 1
+                    break
+            if flag == 0:
+                print('cant follow trace anymore')
+                return 0, None
+    return prob, node
+
+def test_pdfa(pdfa, test_traces):
+    # pdfa['node_id'] -> {'total_cnt', 'symbol', 'fin', 'paths', 'transitions' = {'symbol': {'dnode', 'count'}}}
+    test_trace = ['serD|ssh', 'serD|ssh', 'serD|unknown']
+    tp_cnt = 0
+    tp_as_cnt = 0
+    final_len = len(test_traces)
+    path_not_found = 0
+    no_more_action = 0
+    for tt in test_traces:
+        true_action = tt[-1]
+        tt = tt[:-1]
+        prob, node = find_path(pdfa, tt)
+        if node == None:
+            path_not_found += 1
+            continue
+        sorted_pairs = sorted(pdfa[node]['transitions'].items(), key=lambda x: x[1]['count'], reverse=True)[:5]
+        print('top 5 actions')
+        for i in sorted_pairs:
+            print(i)
+        print('TRUE ACTION', true_action)
+        if sorted_pairs == []:
+            no_more_action += 1
+            continue
+        pred = sorted_pairs[0]
+        if pred[0] == true_action:
+            tp_cnt += 1
+            tp_as_cnt += 1
+        else:
+            current_as = pred[0].split('|')[0]
+            actual_as = true_action.split('|')[0]
+            if current_as == actual_as:
+                tp_as_cnt += 1
+    print(no_more_action)
+    print(path_not_found)
+    print('Accuracy:', tp_cnt/final_len)
+    print('Accuracy with AS:', tp_as_cnt/final_len)
     return
+    
 
 dir_path = '/Users/ionbabalau/uni/thesis/SAGE'
 flexfringe_path = '/Users/ionbabalau/uni/thesis/FlexFringe'
@@ -400,27 +613,36 @@ tr_file_name = dir_path + '/pred_traces/trace_all.txt'
 USE_SINKS = True
 
 ### MAIN START ###
-full_model_name, train_data, test_data = create_train_test_traces(tr_file_name, True)
-unique_sym = set([item for sublist in train_data for item in sublist])
+acc_total = 0
+acc_as_total = 0
+cnt = 1
+use_rand = False
+for i in range(cnt):
+    full_model_name, train_data, test_data = create_train_test_traces(tr_file_name, use_rand)
+    unique_sym = set([item for sublist in train_data for item in sublist])
 
-if USE_SINKS:
-    path_to_ini = flexfringe_path + '/ini/spdfa-config-sinks.ini'
-else:
-    path_to_ini = flexfringe_path + '/ini/spdfa-config.ini'
+    if USE_SINKS:
+        path_to_ini = flexfringe_path + '/ini/spdfa-config-sinks.ini'
+    else:
+        path_to_ini = flexfringe_path + '/ini/spdfa-config.ini'
 
-print('------ Learning SPDFA ---------')
-# Learn S-PDFA
-flexfringe(full_model_name, ini=path_to_ini)
+    print('------ Learning SPDFA ---------')
+    # Learn S-PDFA
+    flexfringe(full_model_name, ini=path_to_ini)
 
-#os.system('dot -Tpng ' + full_model_name + '.ff.final.dot -o ' + output_path + '/main_model.png')
+    #os.system('dot -Tpng ' + full_model_name + '.ff.final.dot -o ' + output_path + '/main_model.png')
 
-fix_syntax(full_model_name)
+    fix_syntax(full_model_name)
 
-print('------ Loading and traversing SPDFA ---------')
-model, data = loadmodel(full_model_name + '.ff.final.json')
-os.system('cp ' + full_model_name + '.ff.final.json ' + output_path + '/main.json')
-os.system('cp ' + full_model_name + '.ff.finalsinks.json '+ output_path + '/sinks.json')
+    print('------ Loading and traversing SPDFA ---------')
+    model, data = loadmodel(full_model_name + '.ff.final.json')
+    os.system('cp ' + full_model_name + '.ff.final.json ' + output_path + '/main.json')
+    os.system('cp ' + full_model_name + '.ff.finalsinks.json '+ output_path + '/sinks.json')
 
-spdfa, rev_spdfa, symbol_to_state = create_structs(data, unique_sym)
+    spdfa, rev_spdfa, symbol_to_state = create_structs(data, unique_sym)
+    acc, acc_as = test_pred_sum(spdfa, rev_spdfa, test_data)
+    acc_total += acc
+    acc_as_total += acc_as
+print('Accuracy', acc_total/cnt)
+print('Accuracy with AS', acc_as_total/cnt)
 
-test_prediction(rev_spdfa, test_data)

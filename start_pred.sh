@@ -3,4 +3,5 @@
 
 source /Users/ionbabalau/uni/thesis/SAGE/.venv/bin/activate
 cp docker_stuff/spdfa-config.ini /Users/ionbabalau/uni/thesis/FlexFringe/ini/spdfa-config.ini
+cp docker_stuff/spdfa-config-sinks.ini /Users/ionbabalau/uni/thesis/FlexFringe/ini/spdfa-config-sinks.ini
 python3 src/prediction.py
