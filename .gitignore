@@ -1,3 +1,7 @@
 output/*
 alerts/*
 .DS_Store
+experiments/
+.venv
+.venv_tf
+.vscode
