@@ -24,7 +24,7 @@ from shutil import copyfile
 from collections import defaultdict
 import copy
 import queue
-
+from sklearn.model_selection import KFold
 
 def parse_file(f):
     fi = open(f, 'r')
@@ -168,41 +168,8 @@ def traverse(dfa, sinks, sequence, statelist=False):
     else:
         return (dfa[state]['type'] == '1', stlst)
 
-# total_fail_start_symb = 0
-# total_fail_next_symb = 0
-# total_fail_no_trans_pos = 0
-# total_succ_root_node = 0
-# total_succ_entire_path = 0
-# cnt = cnt
-from sklearn.utils import shuffle
-from sklearn.preprocessing import normalize
 
-def create_train_test_traces(trace_file, use_random = False, pdfa = False):
-    traces = parse_file(trace_file)
-#    traces = [[get_attack_stage(symbol) for symbol in trace] for trace in traces]
-    trainlen, testlen = round(len(traces)*0.8), round(len(traces)*0.2)
-    testlen = 100
-    if use_random:
-        traces = shuffle(traces)
-    if pdfa:
-        for trace in traces:
-            trace.reverse()
-    unique_trace = set([tuple(x) for x in traces])
-    # train_data = traces[:trainlen]
-    # test_data = traces[trainlen:]
-    test_data = []
-    train_data = []
-    for trace in unique_trace:
-        if len(test_data) == testlen:
-            break
-        if len(trace) <= 7:
-            test_data.append(trace)
-    print(test_data[0])
-    for trace in traces:
-        if tuple(trace) not in test_data:
-            train_data.append(trace)
-    test_data = [list(x) for x in list(test_data)]
-
+def create_train_test_traces(train_data, test_data):#trace_file, use_random = False, pdfa = False):
     print('Using', len(train_data), 'traces for training')
     print('Using', len(test_data), 'traces for testing')
 
@@ -243,7 +210,7 @@ def create_train_test_traces(trace_file, use_random = False, pdfa = False):
     for st in lines:
         f.write(st)
     f.close()
-    return trace_file_location + trace_file_name, train_data, test_data
+    return trace_file_location + trace_file_name
 
 def fix_syntax(fname, is_sink_file = False):
     if is_sink_file:
@@ -300,7 +267,6 @@ def create_structs(data, unique_sym):
         snode = edge['source']
         dnode = edge['target']
         symbol = edge['name']
-        #print(snode, dnode, symbol, spdfa[snode]['fin'])
         if spdfa[dnode]['fin'] != 0:
             ending_prob = (spdfa[snode]['transitions'][symbol]['count'] / spdfa[dnode]['total_cnt']) * spdfa[dnode]['fin'] / end_symb_cnt[symbol]
         else:
@@ -348,9 +314,17 @@ def find_probabilities(rev_spdfa, start_nodes, trace):
 
 from enum import Enum
 class Strategy(Enum):
+    BASELINE_RAND = 4
+    BASELINE_PROB = 5
     FULL_MATCH = 1
     AS_MATCH = 2
     ALL = 3
+
+class Metric(Enum):
+    ACCURACY = 1
+    ACCURACY_AS = 2
+    SKIP_CNT = 3
+    EXEC_TIME = 4
 
 
 def traverse_pnfa_bfs(rev_spdfa, start_nodes, trace, use_factor, strategy = Strategy.ALL):
@@ -446,15 +420,10 @@ as_to_sev = {
     'delivery':'HIGH',
 }
 
-used_memo = 0
-inserted_memo = 0
 def traverse_pnfa_dfs(rev_spdfa, state, trace, len_traces, use_factor, strategy = Strategy.ALL):
-    global used_memo
-    global inserted_memo
     key = (state, tuple(trace))
     #print('KEY', key)
     if key in memo:
-        used_memo += 1
         return memo[key]
     
     paths = []
@@ -465,123 +434,99 @@ def traverse_pnfa_dfs(rev_spdfa, state, trace, len_traces, use_factor, strategy 
     symbol = trace[0]
     factor = 1
     prob_key = 'prob'
+    current_as = symbol.split('|')[0]
+    actual_as = rev_spdfa[state]['symbol'].split('|')[0]
     if rev_spdfa[state]['symbol'] == '':
         #print('root node reached, returning')
         return [([state], 1.0, 'None')]
     else:
-        current_as = symbol.split('|')[0]
-        actual_as = rev_spdfa[state]['symbol'].split('|')[0]
         if use_factor:
             if symbol == rev_spdfa[state]['symbol']:
                 factor = 50
             elif current_as == actual_as:
                 factor = 25
+        # first symbol -> use ending prob instead
         if len(trace) == len_traces:
             prob_key = 'ending_prob'
 
     #print('current symbol', symbol)
-    next_states = [item['target'] for item in rev_spdfa[state]['transitions']]
-    #print('next states', next_states)
-    next_probs = [item[prob_key] * factor for item in rev_spdfa[state]['transitions']]
-
-    if len(trace) >= 7:
-        # max_ind = np.argmax(next_probs)
-        # print('MAX IND', max_ind)
-        sorted_probs = sorted(rev_spdfa[state]['transitions'], key=lambda x: x[prob_key] * factor, reverse=True)
-        top_x_paths = 1
-        if len(sorted_probs) < top_x_paths:
-            top_x_paths = len(sorted_probs)
-        next_states = [item['target'] for item in sorted_probs[:top_x_paths]]
-        next_probs = [item[prob_key] * factor for item in sorted_probs[:top_x_paths]]
-        for item in sorted_probs[top_x_paths:]:
-            paths.append(([state] + [item['target']], item[prob_key], 'None'))
-        # print('CURRENT NODE', state)
-        # print('CURRENT SYMBOL', symbol)
-        # print('nEXT STATES', next_states)
-        #next_states = [next_states[max_ind]]
-        #next_probs = [next_probs[max_ind]]
-        # print('TRACE TOO BIG, FOLLOWING MAX PROB PATH FOR NOW, NEXT NODE', next_states[0])
-        # print('REMAINING PATHS', paths)
-
+    trans = []
+    if strategy == Strategy.FULL_MATCH:
+        if rev_spdfa[state]['symbol'] == symbol:
+            trans = rev_spdfa[state]['transitions']
+        else:
+            return [([state], 1.0, rev_spdfa[state]['symbol'] if rev_spdfa[state]['symbol'] != '' else 'None')]
+    elif strategy == Strategy.AS_MATCH:
+        if rev_spdfa[state]['symbol'] == symbol or current_as == actual_as:
+            trans = rev_spdfa[state]['transitions']
+        else:
+            return [([state], 1.0, rev_spdfa[state]['symbol'] if rev_spdfa[state]['symbol'] != '' else 'None')]
+    else:
+        trans = rev_spdfa[state]['transitions']
+    next_states = [item['target'] for item in trans]
+    next_probs = [item[prob_key] * factor for item in trans]
 
     for s, p in zip(next_states, next_probs):
         for path, prob, next_action in traverse_pnfa_dfs(rev_spdfa, s, trace[1:], len_traces, use_factor, strategy):
             paths.append(([state] + path, p * prob, next_action))
     
     memo[key] = paths
-    inserted_memo += 1
     #print('adding to memo and returning, key', key)
     return paths
 
-
-def test_pred_sum(spdfa, rev_spdfa, test_traces):
+def test_pred_sum(spdfa, rev_spdfa, X_test, Y_test, Y_test_as, strat):
+    global result_dict
     memo.clear()
-    tp_cnt = 0
-    tp_as_cnt = 0
     skip_cnt = 0
-    no_start_cnt = 0
-    fin_tt = []
-    for test_trace in test_traces:
-        test_trace.reverse()
-        if test_trace[0] in symbol_to_state:
-            fin_tt.append(test_trace)
-    fin_tt = sorted(fin_tt, key=len)
-    print(len(fin_tt))
-    #fin_tt = [['serD|ssh', 'serD|ssh', 'serD|unknown', 'vulnD|postgresql']]
-    #test_trace = ['vulnD|ahsp', 'serD|unknown', 'vulnD|postgresql', 'serD|unknown', 'vulnD|ahsp', 'vulnD|ahsp', 'vulnD|postgresql', 'vulnD|postgresql', 'serD|unknown', 'serD|cm', 'vulnD|ahsp', 'vulnD|ahsp', 'serD|ag-swim', 'vulnD|ms-sql-s']
     total_stime = time.time()
-    all_a_stages = set()
     accuracy_per_as = {'LOW':0, 'MEDIUM':0, 'HIGH':0}
     as_count = {'LOW':0, 'MEDIUM':0, 'HIGH':0}
-    for test_trace in fin_tt:
-        true_action = test_trace[-1]
-        test_trace = test_trace[:-1]
-        print('---------------------------TESTING----------------------------')
-        print('reversed input trace:', test_trace, 'LENGHT', len(test_trace))
-        start_nodes = list(symbol_to_state[test_trace[0]])
-        # optimization: remove starting nodes where starting prob is 0, cause entire trace is gonna be 0 anyway
-        start_nodes = [node for node in start_nodes if spdfa[node]['fin'] != 0]
-        if start_nodes == []:
-            no_start_cnt += 1
+    y_pred = []
+    for test_trace in X_test:
+        #print('---------------------------TESTING----------------------------')
+        #print('reversed input trace:', test_trace, 'LENGHT', len(test_trace))
+        if test_trace[0] not in symbol_to_state:
+            skip_cnt += 1
+            y_pred.append('None')
             continue
-        print('starting nodes', start_nodes)
-        
-        if len(test_trace) >= 7:
-            strat = Strategy.FULL_MATCH
-        else:
-            strat = Strategy.ALL
+        start_nodes = list(symbol_to_state[test_trace[0]])
+        #print('starting nodes', start_nodes)
         use_scaling = True
-        start_time = time.time()
         # final_paths, prob_to_redistribute = traverse_pnfa_bfs(rev_spdfa, start_nodes, test_trace, use_scaling, strat)
         # probs_to_scale = [x[1] for x in final_paths]
         prob_list = []
         prob_to_redistribute = []
         for snode in start_nodes:
             prob_list += traverse_pnfa_dfs(rev_spdfa, snode, test_trace, len(test_trace), use_scaling, strat)
-        print('EXECUTION TIME', time.time() - start_time, 'seconds')
+        #print('EXECUTION TIME', time.time() - start_time, 'seconds')
         if prob_list == []:
             skip_cnt += 1
-            print('NO PATH FOUND')
+            y_pred.append('None')
             continue
-        # filter out incomplete pats
+        # filter out incomplete paths
         final_paths = []
         probs_to_scale = []
         for path in prob_list:
+            # n symbols means n + 1 nodes in the path, so we remove paths that are incomplete
             if len(path[0]) != len(test_trace) + 1:
                 prob_to_redistribute.append(path[1])
             else:
                 final_paths.append(path)
                 probs_to_scale.append(path[1])
-        print('FOUND', len(final_paths), 'PATHS AND', len(prob_to_redistribute), 'WHICH END IN ROOT')
+        #print('FOUND', len(final_paths), 'PATHS AND', len(prob_to_redistribute), 'WHICH END IN ROOT')
+        # if no possible paths are possible
         if len(final_paths) == 0:
             skip_cnt += 1
-            print('NO PATH FOUND')
+            y_pred.append('None')
             continue
         # normalization
         if prob_to_redistribute != []:
             probs_to_scale += prob_to_redistribute
         s =  np.sum(probs_to_scale)
-        normalized = [x/s for x in probs_to_scale]
+        if s != 0:
+            normalized = [x/s for x in probs_to_scale]
+        else:
+            normalized = probs_to_scale
         new_probs = normalized[:len(final_paths)]
         
         # redistribution
@@ -590,7 +535,7 @@ def test_pred_sum(spdfa, rev_spdfa, test_traces):
             prob_to_redistribute = normalized[-len(prob_to_redistribute):]
             probs_sum = np.sum(new_probs) + np.sum(prob_to_redistribute)
             #print('PROB SUM', probs_sum)
-            if probs_sum < 0.99 or probs_sum > 1.01:
+            if s != 0 and probs_sum < 0.99 or probs_sum > 1.01:
                 print('ERR')
                 exit()
             total_red = np.sum(prob_to_redistribute)/len(final_paths)
@@ -611,30 +556,25 @@ def test_pred_sum(spdfa, rev_spdfa, test_traces):
         # print('top 5 actions')
         # for i in sorted_pairs:
         #     print(i)
-        print('PREDICTED ACTION', sorted_pairs[0])
-        print('TRUE ACTION', true_action)
-        pred = sorted_pairs[0]
-        if pred[0] == true_action:
-            tp_cnt += 1
-            tp_as_cnt += 1
-        elif get_attack_stage(pred[0]) == get_attack_stage(true_action):
-            tp_as_cnt += 1
-        if get_attack_stage(pred[0]) == get_attack_stage(true_action):
-            accuracy_per_as[as_to_sev[get_attack_stage(true_action)]] += 1
-        as_count[as_to_sev[get_attack_stage(true_action)]] += 1
-        print('--------------------------------------------------------------\n')
-    final_len = len(fin_tt)
-    print('skipped', skip_cnt)
-    print('no start after opti', no_start_cnt)
-    print('tested on ', final_len, 'traces')
-    print('TOTAL EXECUTION TIME', time.time() - total_stime, 'seconds')
-    # print('LOW AC', accuracy_per_as['LOW']/as_count['LOW'], 'count', as_count['LOW'])
-    # print('MEDIUM AC', accuracy_per_as['MEDIUM']/as_count['MEDIUM'], 'count', as_count['MEDIUM'])
-    # print('HIGH AC', accuracy_per_as['HIGH']/as_count['HIGH'], 'count', as_count['HIGH'])
-    return tp_cnt/final_len, tp_as_cnt/final_len, accuracy_per_as['LOW']/as_count['LOW'], accuracy_per_as['MEDIUM']/as_count['MEDIUM'], accuracy_per_as['HIGH']/as_count['HIGH']
+        #print('PREDICTED ACTION', sorted_pairs[0])
+        #print('TRUE ACTION', true_action)
+        y_pred.append(sorted_pairs[0][0])
+        #print('--------------------------------------------------------------\n')    
+    
+    y_pred_as = [get_attack_stage(symb) for symb in y_pred]
+    exec_time = time.time() - total_stime
+    print(exec_time)
+    result_dict[strat][Metric.ACCURACY].append(accuracy_score(Y_test, y_pred))
+    result_dict[strat][Metric.ACCURACY_AS].append(accuracy_score(Y_test_as, y_pred_as))
+    result_dict[strat][Metric.SKIP_CNT].append(skip_cnt/len(X_test))
+    result_dict[strat][Metric.EXEC_TIME].append(exec_time)    
+    return
     
 def get_attack_stage(symbol):
-    return symbol.split('|')[0] #😂
+    if symbol == 'None':
+        return symbol
+    else:
+        return symbol.split('|')[0] #😂
 
 
 def find_path(pdfa, trace):
@@ -728,6 +668,37 @@ def test_pdfa(pdfa, test_traces):
     print('Accuracy with AS:', tp_as_cnt/final_len)
     return tp_cnt/final_len, tp_as_cnt/final_len
     
+from sklearn.metrics import accuracy_score
+
+def test_baseline(train_data, X_test, Y_test, Y_test_as, uniq_symbs):
+    global result_dict
+    probs = {symb: {next_symb: 0 for next_symb in uniq_symbs} for symb in uniq_symbs}
+    for trace in train_data:
+        for symbol, next_symbol in zip(trace, trace[1:]):
+            probs[symbol][next_symbol] += 1
+    next_actions = {symb: sorted(probs[symb].items(), key=lambda x: x[1], reverse=True)[:1][0][0] for symb in uniq_symbs}
+    y_pred = []
+    skip_cnt = 0
+    for trace in X_test:
+        last_action = trace[-1]
+        if last_action in next_actions:
+            predicted_action = next_actions[last_action]
+            y_pred.append(predicted_action)
+        else:
+            skip_cnt += 1
+            y_pred.append('None')
+    y_pred_as = [get_attack_stage(symb) for symb in y_pred]
+    result_dict[Strategy.BASELINE_PROB][Metric.ACCURACY].append(accuracy_score(Y_test, y_pred))
+    result_dict[Strategy.BASELINE_PROB][Metric.ACCURACY_AS].append(accuracy_score(Y_test_as, y_pred_as))
+    result_dict[Strategy.BASELINE_PROB][Metric.SKIP_CNT].append(skip_cnt/len(X_test))
+    return
+
+def test_baseline_rand(Y_test, Y_test_as):
+    global result_dict
+    last_symbols = set(Y_test)
+    last_symbols_as = set(Y_test_as)
+    result_dict[Strategy.BASELINE_RAND][Metric.ACCURACY].append(1/len(last_symbols))
+    result_dict[Strategy.BASELINE_RAND][Metric.ACCURACY_AS].append(1/len(last_symbols_as))
 
 dir_path = '/Users/ionbabalau/uni/thesis/SAGE'
 flexfringe_path = '/Users/ionbabalau/uni/thesis/FlexFringe'
@@ -736,13 +707,23 @@ tr_file_name = dir_path + '/pred_traces/trace_all.txt'
 USE_SINKS = True
 
 ### MAIN START ###
-acc_total = 0
-acc_as_total = 0
-l_tot, m_tot, h_tot = (0, 0, 0)
+strategies = ['baseline_rand', 'baseline_prob', 'full_match', 'as_match', 'any_match']
+result_dict = {strategy: {key:[] for key in Metric} for strategy in Strategy}
+
 cnt = 10
-use_rand = True
-for i in range(cnt):
-    full_model_name, train_data, test_data = create_train_test_traces(tr_file_name, use_rand)
+kf = KFold(n_splits=cnt, shuffle=True, random_state=42)
+traces = parse_file(tr_file_name)
+unique_trace = [list(y) for y in set([tuple(x) for x in traces])]
+unique_trace = [x for x in unique_trace  if len(x) < 7]
+
+for train_index, test_index in kf.split(unique_trace):
+    test_data = [unique_trace[i] for i in test_index]
+    train_data = []
+    for trace in traces:
+        if trace not in test_data:
+            train_data.append(trace)
+
+    full_model_name = create_train_test_traces(train_data, test_data)
     unique_sym = set([item for sublist in train_data for item in sublist])
 
     if USE_SINKS:
@@ -764,15 +745,26 @@ for i in range(cnt):
     os.system('cp ' + full_model_name + '.ff.finalsinks.json '+ output_path + '/sinks.json')
 
     spdfa, rev_spdfa, symbol_to_state = create_structs(data, unique_sym)
-    acc, acc_as, l, m, h = test_pred_sum(spdfa, rev_spdfa, test_data)
-    #acc, acc_as = test_pdfa(spdfa, test_data)
-    acc_total += acc
-    acc_as_total += acc_as
-    l_tot += l
-    m_tot += m
-    h_tot += h
-print('Accuracy', acc_total/cnt)
-print('Accuracy with AS', acc_as_total/cnt)
-print('LOW AC', l_tot/cnt)
-print('MEDIUM AC', m_tot/cnt)
-print('HIGH AC', h_tot/cnt)
+
+    for trace in test_data:
+        trace.reverse()
+    test_data = sorted(test_data, key=len)
+    X_test = [trace[:-1] for trace in test_data]
+    Y_test = [trace[-1] for trace in test_data]
+    Y_test_as = [get_attack_stage(symb) for symb in Y_test]
+
+    test_baseline_rand(Y_test, Y_test_as)
+    test_baseline(train_data, X_test, Y_test, Y_test_as, unique_sym)
+    test_pred_sum(spdfa, rev_spdfa, X_test, Y_test, Y_test_as, Strategy.FULL_MATCH)
+    print('------------------------------------------')
+    test_pred_sum(spdfa, rev_spdfa, X_test, Y_test, Y_test_as, Strategy.AS_MATCH)
+    print('------------------------------------------')
+    test_pred_sum(spdfa, rev_spdfa, X_test, Y_test, Y_test_as, Strategy.ALL)
+
+print()
+for strat in Strategy:
+    print(strat)
+    for metric in Metric:
+        if len(result_dict[strat][metric]) != 0:
+            print(metric, sum(result_dict[strat][metric])/len(result_dict[strat][metric]))
+    print()
