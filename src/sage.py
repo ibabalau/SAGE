@@ -3060,7 +3060,6 @@ if extracommas is not None:
     filedata = ''.join(filedata.rsplit(',', c))
     with open(path_to_model+".ff.final.json", 'w') as file:
         file.write(filedata)
-exit()
 print('------ Loading and traversing SPDFA ---------')
 # Load S-PDFA
 m, data = loadmodel(path_to_model+".ff.final.json")
