@@ -1275,10 +1275,17 @@ def get_attack_stage_mapping(signature):
 
     return micro_inv[str(result)]
 
-# Program to find most frequent
-def most_frequent(serv):
-    return max(set(serv), key = serv.count)
-
+# Program to find most frequent  
+def most_frequent(serv): 
+    max_frequency = 0
+    most_frequent_service = None
+    for s in serv:
+       frequency = serv.count(s)
+       if frequency > max_frequency:
+            most_frequent_service = s
+            max_frequency = frequency
+    return most_frequent_service
+    
 ser_groups = dict({
     'http(s)': ['http', 'https', 'ddi-udp-1', 'radan-http'],
     'wireless' : ['wap-wsp'],
@@ -1951,7 +1958,6 @@ def aggregate_into_episodes(unparse, team_labels, step=150):
 
             #print(attacker, len([(x[1]) for x in alerts])) # TODO: what about IPs that are not attacker related?
             first_elapsed_time = round((alerts[0][2]-startTimes[tid]).total_seconds(),2)
-
             # debugging if start times of each connection are correct.
             #print(first_elapsed_time, round( (s_t[str(tid)+"|"+str(attacker[0])+"->"+str(attacker[1])] - startTimes[tid]).total_seconds(),2))
             #last_elapsed_time = round((alerts[-1][2] - alerts[0][2]).total_seconds() + first_elapsed_time,2)
@@ -2000,53 +2006,46 @@ def aggregate_into_episodes(unparse, team_labels, step=150):
                 if len(episodes) > 0:
 
                     events  = [len(x) for x in mindata]
-
-                    minute_info = [(x[0]*step+t0, x[1]*step+t0) for x in episodes]
-
                     raw_ports = []
                     raw_sign = []
-
+                    timestamps = []
+                    
                     for e in mindata:
                         if len(e) > 0:
                             raw_ports.append([(x[3]) for x in e])
                             raw_sign.append([(x[4]) for x in e])
+                            timestamps.append([(x[2]) for x in e])
                         else:
                             raw_ports.append([])
                             raw_sign.append([])
+                            timestamps.append([])
 
                     _flat_ports = [item for sublist in raw_ports for item in sublist]
-
-                    episode = [(mi[0], mi[1], mcat, events[x[0]:x[1]+1],
-                                   raw_ports[x[0]:x[1]+1], raw_sign[x[0]:x[1]+1])
+                    
+                    # The following makes exact start/end times based on alert timestamps
+                    filtered_timestamps = [timestamps[x[0]:x[1]+1] for x in episodes]
+                    start_end_timestamps = [(sorted([item for sublist in x for item in sublist])[0], sorted([item for sublist in x for item in sublist])[-1]) for x in filtered_timestamps]
+                    minute_info = [((x[0]-startTimes[tid]).total_seconds(), (x[1]-startTimes[tid]).total_seconds()) for x in start_end_timestamps]
+                    episode = [(mi[0], mi[1], mcat, events[x[0]:x[1]+1], 
+                                   raw_ports[x[0]:x[1]+1], raw_sign[x[0]:x[1]+1], filtered_timestamps)
                                  for x,mi in zip(episodes, minute_info)] # now the start and end are actual elapsed times
-
-                    #EPISODE DEF: (startTime, endTime, mcat, len(rawevents), volume(alerts), epiPeriod, epiServices, list of unique signatures)
+                    
+                    #EPISODE DEF: (startTime, endTime, mcat, len(rawevents), volume(alerts), epiPeriod, epiServices, list of unique signatures, (1st timestamp, last timestamp)
                     if USE_SERVICE_GROUPS:
                         episode = [(x[0], x[1], x[2], x[3], round(sum(x[3])/float(len(x[3])),1), (x[1]-x[0]),
                                 most_frequent([item for sublist in x[4] for item in sublist]), list(set([item for sublist in x[5] for item in sublist]))) for x in episode]
                     else:
                         episode = [(x[0], x[1], x[2], x[3], round(sum(x[3])/float(len(x[3])),1), (x[1]-x[0]),
-                                [item for sublist in x[4] for item in sublist], list(set([item for sublist in x[5] for item in sublist]))) for x in episode]
-
-                    h_ep.extend(episode)
+                                    [item for sublist in x[4] for item in sublist], list(set([item for sublist in x[5] for item in sublist])),
+                                    se_ts) for x,se_ts in zip(episode,start_end_timestamps)]
+                    h_ep.extend(episode) 
 
             if len(h_ep) == 0:
                 continue
-            # artifically adding tiny delay for events that are exactly at the same time
+
             h_ep.sort(key=lambda tup: tup[0])
-            minute_info = [x[0] for x in h_ep]
-            minute_info2 = [minute_info[0]]
-            tiny_delay= 1
-            for i in range(1, len(minute_info)):
-                if i == 0:
-                    pass
-                else:
-                    if (minute_info[i]==(minute_info[i-1])):
-                        minute_info2.append(  minute_info2[-1]+tiny_delay)
-                    else:
-                        minute_info2.append(minute_info[i])
-            h_ep = [(minute_info2[i],x[1],x[2],x[3],x[4],x[5], x[6], x[7]) for i,x in enumerate(h_ep)]
             t_ep[attacker] = h_ep
+            
             if PRINT:
                 fig = plt.figure(figsize=(10,10))
                 ax = plt.gca()
@@ -2108,7 +2107,7 @@ def host_episode_sequences(team_episodes):
             if USE_SERVICE_GROUPS:
                 ext = [(x[0], x[1], x[2], x[3], x[4], x[5], ser_inv[x[6]] if x[6] in ser_inv.keys() else x[6], x[7], vic) for x in episodes]
             else:
-                ext = [(x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], vic) for x in episodes]
+                ext = [(x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], vic) for x in episodes]
 
             host_data[att].append(ext)
             host_data[att].sort(key=lambda tup: tup[0][0])
@@ -2514,8 +2513,7 @@ def make_condensed_data(alerts, keys, state_traces, med_states, sev_states):
         # also artifically add tiny delay so all events are not exactly at the same time.
         #print(len(episodes), new_state, max_servs)
         #TODO: potentially also need to modify here to use the group
-        times = [(x[0], x[1], x[2], int(new_state[i]), max_servs[i], x[7]) for i,x in enumerate(episodes)] # start time, endtime, episode mas, state ID, most frequent service, list of unique signatures
-
+        times = [(x[0], x[1], x[2], int(new_state[i]), max_servs[i], x[7], x[8]) for i,x in enumerate(episodes)] # start time, endtime, episode mas, state ID, most frequent service, list of unique signatures, (1st and last timestamp)
         step1 = attacker.split('->')
         step1_0 = step1[0].split('-')[0]
         step1_1 = step1[0].split('-')[1]
@@ -2670,8 +2668,8 @@ def make_av_data(condensed_data):
     condensed_v_data= dict()
     for attacker,episodes in condensed_data.items():
         team = attacker.split('-')[0]
-        victim = attacker.split('->')[1]
-        tv = team+'-'+victim
+        victim_ = attacker.split('->')[1]
+        tv = team+'-'+victim_
         #print(tv)
         if tv not in condensed_v_data.keys():
             condensed_v_data[tv] = []
@@ -2684,8 +2682,8 @@ def make_av_data(condensed_data):
     condensed_a_data= dict()
     for attacker,episodes in condensed_data.items():
         team = attacker.split('-')[0]
-        victim = (attacker.split('->')[0]).split('-')[1]
-        tv = team+'-'+victim
+        attacker_ = (attacker.split('->')[0]).split('-')[1]
+        tv = team+'-'+attacker_
         #print(tv)
         if tv not in condensed_a_data.keys():
             condensed_a_data[tv] = []
@@ -2790,6 +2788,7 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
                     end_time = round(ep[1]/1.0)
                     cat = micro[ep[2]].split('.')[1]
                     signs = ep[5]
+                    timestamps = ep[6]
                     stateID = -1
                     if ep[3] in in_main_model:
                         stateID = '' if len(str(ep[2])) == 1 else '|'+str(ep[3])
@@ -2797,18 +2796,17 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
                         stateID = '|Sink'
 
                     vert_name = cat + '|'+ ep[4] + stateID
-
-                    vname_time.append((vert_name, start_time, end_time, signs))
-
-                # checks if vname_Time contains the vertex for the current atack
+                    
+                    vname_time.append((vert_name, start_time, end_time, signs, timestamps))
+                    
                 if not sum([True if attack in x[0] else False for x in vname_time]): # if the objective is never reached, don't process further
                     continue
 
                 # if it's an episode sequence targetting the requested victim and obtaining the requested objective,
                 attempts = []
                 sub_attempt = []
-                for (vname, start_time, end_time, signs) in vname_time: # cut each attempt until the requested objective
-                    sub_attempt.append((vname, start_time, end_time, signs)) # add the vertex in path
+                for (vname, start_time, end_time, signs, ts) in vname_time: # cut each attempt until the requested objective
+                    sub_attempt.append((vname, start_time, end_time, signs, ts)) # add the vertex in path
                     if attack in vname: # if it's the objective
                         if len(sub_attempt) <= 1: ## If only a single node, reject
                             sub_attempt = []
@@ -2871,7 +2869,7 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
                             nodes[action[0]] = set()
                         nodes[action[0]].update(action[3])
                     # nodes
-                    for vid,(vname,start_time,end_time,signs) in enumerate(attempt): # iterate over each action in an attempt
+                    for vid,(vname,start_time,end_time,signs,_) in enumerate(attempt): # iterate over each action in an attempt
                         if vid == 0: # if first action
                             if 'Sink' in vname: # if sink, make dotted
                                 lines.append((0,'"'+translate(vname)+'" [style="dotted,filled", fillcolor= yellow]'))
@@ -2902,16 +2900,21 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
 
                     # transitions
                     bi = zip(attempt, attempt[1:]) # make bigrams (sliding window of 2)
-                    for vid,((vname1,time1,etime1, signs1),(vname2,_,_, signs2)) in enumerate(bi): # for every bigram
-                        if vid == 0: # first transition, add attacker IP
-                            lines.append((time1, '"'+translate(vname1)+'"' + ' -> ' + '"'+translate(vname2)+'" [ color='+color+'] '+'[label=<<font color="'+color+'">'+attackerID.split('-')[1]+'</font><br/> <font>'+str(time1) +'s</font>>]'
-                            #+ ' [tooltip=" From:\n'+ "\n    - ".join(signs1) + "\nTo:\n" + "\n    - ".join(signs2) +'"]'
-                            ))
+                    for vid,((vname1,time1,etime1, signs1, ts1),(vname2,_,_, signs2, ts2)) in enumerate(bi): # for every bigram
+                        _from_last = ts1[1].strftime("%d/%m/%y, %H:%M:%S")
+                        _to_first = ts2[0].strftime("%d/%m/%y, %H:%M:%S")
+                        gap = round((ts2[0] - ts1[1]).total_seconds())
+                        if vid == 0:  # first transition, add attacker IP
+                            lines.append((time1, '"' + translate(vname1) + '"' + ' -> ' + '"' + translate(vname2) +
+                                          '" [ color=' + color + '] ' + '[label=<<font color="' + color + '"> start_next: ' + _to_first + '<br/>gap: ' +
+                                          str(gap) + 'sec<br/>end_prev: ' + _from_last + '</font><br/><font color="' + color + '"><b>Attacker: ' +
+                                          attackerID.split('-')[1] + '</b></font>>]'
+                                          ))
                         else:
-                            lines.append((time1, '"'+translate(vname1)+'"' + ' -> ' + '"'+translate(vname2)+'"' +' [ label="'+ str(time1) +'s"]' + '[ color='+color+']'
-                            #+ ' [tooltip=" From:\n'+ "\n    - ".join(signs1) + "\nTo:\n" + "\n    - ".join(signs2) +'"]'
-                            ))
-
+                            lines.append((time1, '"' + translate(vname1) + '"' + ' -> ' + '"' + translate(vname2) +
+                                          '"' + ' [ label="start_next: ' + _to_first + '\ngap: ' +
+                                          str(gap) + 'sec\nend_prev: ' + _from_last + '"]' + '[ fontcolor="' + color + '" color=' + color + ']'
+                                          ))
 
             for vname, signatures in nodes.items(): # Go over all vertices again and define their shapes + make high-sev sink states dotted
                 mas = vname.split('|')[0]

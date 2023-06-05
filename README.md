@@ -6,8 +6,13 @@ Repository to accompany our publications
 "Alert-driven Attack Graph Generation using S-PDFA" at TDSC'21.
 
 ## Requires 
-- Flexfringe (https://bitbucket.org/chrshmmmr/dfasat/src/master/)
-- Graphviz
+- Flexfringe (https://github.com/tudelft-cda-lab/FlexFringe)
+- Python packages
+  - Graphviz
+  - Seaborn
+  - Requests
+  - [Optional] Fastai (1.0.58)
+  - [Optional] Spacy 2.3.5
 
 **Or you can switch to the `docker` branch for a docker container.**
 
@@ -26,7 +31,12 @@ Repository to accompany our publications
 
 ## First time use
 
-- Set paths to `flexfringe/` `ini-file/` `trace file/` location to store experimental artefacts in `sage.py` script.
+- In `sage.py`, set paths to `flexfringe/` executable, and `path_to_ini` variable.
+- A sample alert file is provided with the name `sample-input.json` (T5 alerts from CPTC-2018) to test SAGE. Use the following command: 
+
+`python sage.py alerts/ firstExp 1.0 150`
+
+where `alerts/` contains `sample-input.json`.
 
 **If you use SAGE in a scientific work, consider citing the following papers:**
 
