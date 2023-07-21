@@ -5,3 +5,7 @@ experiments/
 .venv
 .venv_tf
 .vscode
+realtime/
+plots/
+*.log
+src/__pycache__/

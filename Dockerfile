@@ -35,6 +35,7 @@ COPY docker_stuff/spdfa-config.ini /root/FlexFringe/ini/
 COPY docker_stuff/script.sh /root
 COPY docker_stuff/input.ini /root
 COPY docker_stuff/service-names-port-numbers.csv /root
+COPY realtime/test_traces.txt /root
 RUN cd /root && mkdir input/
 
 COPY alerts/*.json /root/input/ 

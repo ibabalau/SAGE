@@ -2764,12 +2764,12 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
     attacks = list(attacks)
 
     for int_victim in total_victims:  # iterate over every victim
-        if int_victim != '10.0.0.20':
-            continue
+        #if int_victim != '10.0.0.20':
+        #    continue
         print('\n!!! Rendering AGs for Victim ', int_victim,'\n',  sep=' ', end=' ', flush=True)
         for attack in attacks: # iterate over every attack
-            if attack != 'DATA_EXFILTRATION':
-                continue
+            #if attack != 'DATA_EXFILTRATION':
+            #    continue
             print('\t!!!! Objective ', attack,'\n',  sep=' ', end=' ', flush=True)
             collect = dict()
             
@@ -2951,6 +2951,7 @@ def make_AG(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile,
                     f.write(l[1])
                     f.write('\n')
                 f.close()
+                os.system('cp ' + dirname + '/' + out_f_name + '.dot /home/out/dotfile.dot')
 
                 os.system("dot -Tpng "+dirname+'/'+out_f_name+".dot -o "+dirname+'/'+out_f_name+".png")
                 os.system("dot -Tsvg "+dirname+'/'+out_f_name+".dot -o "+dirname+'/'+out_f_name+".svg")
@@ -3004,40 +3005,46 @@ path_to_traces = datafile
 
 port_services = load_IANA_mapping()
 
-print('----- Reading alerts ----------')
-(unparse, team_labels) = load_data(folder, t) # t = minimal window for alert filtering
-#plt = plot_histogram(unparse, team_labels)
-#plt.savefig('data_histogram-'+expname+'.png')
-print('------ Converting to episodes ---------')
-# team_episodes - list of a dictionaries, one dict per team
-# dict keys - (attacker, victim), dict values - list of episodes
-team_episodes,_ = aggregate_into_episodes(unparse, team_labels, step=w) # step = w
-#for key in team_episodes[0].keys():
-#    print(team_episodes[0][key])
-print('\n---- Converting to episode sequences -----------')
-# result - dictionary with key - team_attakcer_ip, value - episode + victim_ip
-host_data  =  host_episode_sequences(team_episodes)
-print('----- breaking into sub-sequences and making traces----------')
-# alerts - list where each item is a list of episodes for a victim
-# keys - list with attack->victim values
-(alerts, keys) = break_into_subbehaviors(host_data)
-generate_traces(alerts, keys, datafile)
+# print('----- Reading alerts ----------')
+# (unparse, team_labels) = load_data(folder, t) # t = minimal window for alert filtering
+# #plt = plot_histogram(unparse, team_labels)
+# #plt.savefig('data_histogram-'+expname+'.png')
+# print('------ Converting to episodes ---------')
+# # team_episodes - list of a dictionaries, one dict per team
+# # dict keys - (attacker, victim), dict values - list of episodes
+# team_episodes,_ = aggregate_into_episodes(unparse, team_labels, step=w) # step = w
+# print('\n---- Converting to episode sequences -----------')
+# # result - dictionary with key - team_attakcer_ip, value - episode + victim_ip
+# host_data  =  host_episode_sequences(team_episodes)
+# print('----- breaking into sub-sequences and making traces----------')
+# # alerts - list where each item is a list of episodes for a victim
+# # keys - list with attack->victim values
+# (alerts, keys) = break_into_subbehaviors(host_data)
+# generate_traces(alerts, keys, datafile)
 
 
 print('------ Learning SPDFA ---------')
 # Learn S-PDFA
+path_to_traces = 'test_traces.txt'
+datafile = path_to_traces
+modelname = path_to_traces
 flexfringe(path_to_traces, ini=path_to_ini, symbol_count="2", state_count="4")
 
 ## Copying files
 outfile = (outaddress+datafile)
 o = (outaddress+modelname)
-os.system("dot -Tpng "+outfile+".ff.final.dot -o "+o+".png")
+# os.system('pwd')
+os.system("dot -Tpng "+outfile+".ff.final.dot -o /home/out/" + o + ".png")
+print('yes')
+os.system('cp /root/test_traces.txt.ff.final.json /home/out/test_traces.txt.ff.final.json')
+os.system('cp /root/test_traces.txt.ff.finalsinks.json /home/out/test_traces.txt.ff.finalsinks.json')
+exit()
 #files = [ datafile+'.ff.final.dot', datafile+'.ff.final.dot.json', datafile+'.ff.sinksfinal.json', datafile+'.ff.init_dfa.dot', datafile+'.ff.init_dfa.dot.json']
 #outfiles = [ modelname+'.ff.final.dot', modelname+'.ff.final.dot.json', modelname+'.ff.sinksfinal.json', modelname+'.ff.init_dfa.dot', modelname+'.ff.init_dfa.dot.json']
 #for (file,out) in zip(files,outfiles):
 #    copyfile(outaddress+file, outaddress+out)
 
-path_to_model = outaddress+modelname
+path_to_model = outaddress + modelname
 
 print('------ !! Special: Fixing syntax error in main model and sink files  ---------')
 print('--- Sinks')
@@ -3049,7 +3056,7 @@ if extracommas is not None:
     c = (extracommas.group(0)).count(',')
     print(extracommas.group(0), c)
     filedata = ''.join(filedata.rsplit(',', c))
-    with open(path_to_model+".ff.finalsinks.json", 'w') as file:
+    with open('/home/out' + path_to_model + ".ff.finalsinks.json", 'w') as file:
         file.write(filedata)
 
 print('--- Main')
@@ -3061,9 +3068,11 @@ if extracommas is not None:
     c = (extracommas.group(0)).count(',')
     print(extracommas.group(0), c)
     filedata = ''.join(filedata.rsplit(',', c))
-    with open(path_to_model+".ff.final.json", 'w') as file:
+    with open('/home/out' + path_to_model + ".ff.final.json", 'w') as file:
         file.write(filedata)
 print('------ Loading and traversing SPDFA ---------')
+
+
 # Load S-PDFA
 m, data = loadmodel(path_to_model+".ff.final.json")
 m2,data2 = loadmodel(path_to_model+".ff.finalsinks.json")
