@@ -342,7 +342,6 @@ def translate(label, root=False):
 
 def make_AG(condensed_data: dict[str, list[EpisodeNW]], sev_sinks: set[str], dirname, victim_host):
     global w
-    color = 'tomato'
     dirname += '/AGs'
     try:
         if os.path.exists(dirname):
@@ -395,7 +394,9 @@ def make_AG(condensed_data: dict[str, list[EpisodeNW]], sev_sinks: set[str], dir
             ep_sequence.append(AGNode(vert_name, timestamp, sign, sev))
             # add to attempts and continue processing further
             if cat == attack and sev == 'High':
-                attempts.append(ep_sequence.copy())
+                attempts.append(ep_sequence)
+                last_action = ep_sequence[-1]
+                ep_sequence = [last_action]
                 attack_vnames.add(vert_name)
         logger.debug('observed objectives' +  str(attack_vnames))
         logger.debug('FOUND ' + str(len(attempts)) + ' attempts')
@@ -416,7 +417,7 @@ def make_AG(condensed_data: dict[str, list[EpisodeNW]], sev_sinks: set[str], dir
                     sinkflag = True
                     break
             if sinkflag:
-                lines.append((0,'"'+translate(obj)+'" [style="filled,dotted", fillcolor= salmon]'))
+                lines.append((0,'"'+translate(obj)+'" [style="dotted, filled", fillcolor= salmon]'))
             else:
                 lines.append((0,'"'+translate(obj)+'" [style=filled, fillcolor= salmon]'))
 
@@ -439,8 +440,9 @@ def make_AG(condensed_data: dict[str, list[EpisodeNW]], sev_sinks: set[str], dir
             # nodes
             for vid, (vname, ts, sign, sev) in enumerate(attempt): # iterate over each action in an attempt
                 if vid == 0: # if first action
+                    cl = ', fillcolor= yellow' if sev != 'High' else ''
                     if 'Sink' in vname: # if sink, make dotted
-                        lines.append((0,'"'+translate(vname)+'" [style="dotted,filled", fillcolor= yellow]'))
+                        lines.append((0,'"'+translate(vname)+'" [style="dotted,filled"' + cl + ']'))
                     else:
                         sinkflag = False
                         for sink in sev_sinks:
@@ -448,10 +450,10 @@ def make_AG(condensed_data: dict[str, list[EpisodeNW]], sev_sinks: set[str], dir
                                 sinkflag = True
                                 break
                         if sinkflag:
-                            lines.append((0,'"'+translate(vname)+'" [style="dotted,filled", fillcolor= yellow]'))
+                            lines.append((0,'"'+translate(vname)+'" [style="dotted,filled"' + cl + ']'))
                             already_addressed.add(vname.split('|')[1])
                         else: # else, normal starting node
-                            lines.append((0,'"'+translate(vname)+'" [style=filled, fillcolor= yellow]'))
+                            lines.append((0,'"'+translate(vname)+'" [style=filled' + cl + ']'))
                 else: # for other actions
                     if 'Sink' in vname: # if sink
                         line = [x[1] for x in lines] # take all AG graph lines so far, and see if it was ever defined before, re-define it to be dotted
@@ -467,18 +469,41 @@ def make_AG(condensed_data: dict[str, list[EpisodeNW]], sev_sinks: set[str], dir
                             lines.append((0,partial+'"]'))
 
             # transitions
+            fontcolor = 'dimgray'
+            color = 'tomato'
             bi = zip(attempt, attempt[1:]) # make bigrams (sliding window of 2)
             for vid,((vname1, ts1, _, _),(vname2, ts2, _, _)) in enumerate(bi): # for every bigram
                 _from_last = ts1.strftime("%d/%m/%y, %H:%M:%S")
                 _to_first = ts2.strftime("%d/%m/%y, %H:%M:%S")
                 gap = round((ts2 - ts1).total_seconds())
-                lines.append((ts1, '"' + translate(vname1) + '"' + ' -> ' + '"' + translate(vname2) +
-                                '"' + ' [ label="' + 
-                                'start_next: ' + _to_first + '\n' +
-                                'end_prev: ' + _from_last + '\n' +
-                                'gap: ' + str(gap) + 'sec"]' +
-                                '[ fontcolor="' + color + '" color=' + color + ']'
-                                ))
+                gap_str = ''
+                if gap > 3600:
+                    gap_str = "{:.1f}".format(gap/3600) + ' h'
+                elif gap > 60:
+                    gap_str = "{:.1f}".format(gap/60) + ' min'
+                else:
+                    gap_str = str(gap) + ' sec'
+                if vid == 0:
+                    lines.append((ts1, '"' + translate(vname1) + '"' + ' -> ' + '"' + translate(vname2) +
+                                    '"' + ' [ label="' + 
+                                    'prev_ts: ' + _from_last + '\n' +
+                                    'next_ts: ' + _to_first + '\n' +
+                                    'gap: ' + gap_str + '\n' + 
+                                    'action no. ' + str(vid + 1) + 
+                                    '"]' +
+                                    '[ fontcolor="' + fontcolor + '" color=' + color + ']'
+                                    ))
+                else:
+                    lines.append((ts1, '"' + translate(vname1) + '"' + ' -> ' + '"' + translate(vname2) +
+                                    '"' + ' [ label="' + 
+                                    #'end_prev: ' + _from_last + '\n' +
+                                    #'start_next: ' + _to_first + '\n' +
+                                    '  ts: ' + _to_first + '\n' +
+                                    'gap: ' + gap_str + '\n' + 
+                                    'action no. ' + str(vid + 1) + 
+                                    '"]' +
+                                    '[ fontcolor="' + fontcolor + '" color=' + color + ']'
+                                    ))
 
         for vname, signatures in nodes.items(): # Go over all vertices again and define their shapes + make high-sev sink states dotted
             shape = 'oval'
@@ -495,7 +520,10 @@ def make_AG(condensed_data: dict[str, list[EpisodeNW]], sev_sinks: set[str], dir
                         sinkflag = True
                         break
                 if sinkflag:
-                    lines.append((0,'"'+translate(vname)+'" [style="dotted", shape='+shape+']'))
+                    if node_sev[vname] == 'High' and attack in vname:
+                        lines.append((0,'"'+translate(vname)+'" [style="dotted,filled", fillcolor= salmon, shape='+shape+']'))
+                    else: 
+                        lines.append((0,'"'+translate(vname)+'" [style="dotted", shape='+shape+']'))
                 else:
                     lines.append((0,'"'+translate(vname)+'" [shape='+shape+']'))
             # add tooltip
