@@ -486,10 +486,10 @@ def make_AG(condensed_data: dict[str, list[EpisodeNW]], sev_sinks: set[str], dir
                 if vid == 0:
                     lines.append((ts1, '"' + translate(vname1) + '"' + ' -> ' + '"' + translate(vname2) +
                                     '"' + ' [ label="' + 
-                                    'prev_ts: ' + _from_last + '\n' +
-                                    'next_ts: ' + _to_first + '\n' +
+                                    'action no. ' + str(vid + 1) + '\n' + 
                                     'gap: ' + gap_str + '\n' + 
-                                    'action no. ' + str(vid + 1) + 
+                                    'prev_ts: ' + _from_last + '\n' +
+                                    'next_ts: ' + _to_first  +
                                     '"]' +
                                     '[ fontcolor="' + fontcolor + '" color=' + color + ']'
                                     ))
@@ -498,9 +498,9 @@ def make_AG(condensed_data: dict[str, list[EpisodeNW]], sev_sinks: set[str], dir
                                     '"' + ' [ label="' + 
                                     #'end_prev: ' + _from_last + '\n' +
                                     #'start_next: ' + _to_first + '\n' +
-                                    '  ts: ' + _to_first + '\n' +
+                                    'action no. ' + str(vid + 1) + '\n' + 
                                     'gap: ' + gap_str + '\n' + 
-                                    'action no. ' + str(vid + 1) + 
+                                    'ts: ' + _to_first + 
                                     '"]' +
                                     '[ fontcolor="' + fontcolor + '" color=' + color + ']'
                                     ))
