@@ -1,0 +1,179 @@
+{
+	"types" : [
+"1"
+	],
+	"alphabet" : [
+"Persistence-PrivilegeEscalation|High",
+"Execution.UserExecution|Medium",
+"InitialAccess.ValidAccounts-LateralMovement.RemoteServices|Medium",
+"Persistence.AccountManipulation|Medium",
+"InitialAccess.ValidAccounts|Medium",
+"Persistence.AccountManipulation|High",
+"CredentialAccess.OSCredentialDumping|High",
+"Persistence-PrivilegeEscalation|Medium",
+"InitialAccess-Discovery|Medium",
+"InitialAccess.Phishing-InitialAccess.Drive-byCompromise-Exfiltration.ExfiltrationOverWebService-CommandandControl.WebService-CommandandControl.ApplicationLayerProtocol|Medium",
+"PrivilegeEscalation.ProcessInjection|Medium",
+"CommandandControl.ApplicationLayerProtocol|Medium",
+"Persistence-PrivilegeEscalation|Low",
+"InitialAccess.ValidAccounts|High",
+"InitialAccess.Phishing|Medium",
+"Discovery.AccountDiscovery|Medium",
+"DefenseEvasion.SystemBinaryProxyExecution|High"
+	],
+	"nodes" : [
+		{
+			"id" : 0,
+			"source" :  -1,
+			"label" : "fin:  path: 0:35 , ",
+			"size" : 35,
+			"level" : 0,
+			"style" : "",
+			"isred" :  1,
+			"issink" :  0,
+			"isblue" :  0,
+			"trace" :  "0 0",
+			"data" :  {"path_counts":{"0":35},"symbol_counts":null,"total_final":0,"total_paths":35,"trans_counts":{"CommandandControl.ApplicationLayerProtocol|Medium":"1","DefenseEvasion.SystemBinaryProxyExecution|High":"1","Execution.UserExecution|Medium":"2","InitialAccess-Discovery|Medium":"2","InitialAccess.Phishing-InitialAccess.Drive-byCompromise-Exfiltration.ExfiltrationOverWebService-CommandandControl.WebService-CommandandControl.ApplicationLayerProtocol|Medium":"1","InitialAccess.Phishing|Medium":"1","InitialAccess.ValidAccounts-LateralMovement.RemoteServices|Medium":"14","InitialAccess.ValidAccounts|High":"2","InitialAccess.ValidAccounts|Medium":"2","Persistence-PrivilegeEscalation|High":"3","Persistence-PrivilegeEscalation|Low":"3","Persistence-PrivilegeEscalation|Medium":"2","Persistence.AccountManipulation|High":"1"}}
+		},
+		{
+			"id" : 3,
+			"source" :  0,
+			"label" : "fin: 0:6 ,  path: 0:56 , ",
+			"size" : 62,
+			"level" : 1,
+			"style" : "",
+			"isred" :  1,
+			"issink" :  0,
+			"isblue" :  0,
+			"trace" :  "1 1 InitialAccess.ValidAccounts-LateralMovement.RemoteServices|Medium",
+			"data" :  {"final_counts":{"0":6},"path_counts":{"0":56},"symbol_counts":null,"total_final":6,"total_paths":56,"trans_counts":{"InitialAccess.ValidAccounts-LateralMovement.RemoteServices|Medium":"48","InitialAccess.ValidAccounts|Medium":"7","Persistence.AccountManipulation|Medium":"1"}}
+		},
+		{
+			"id" : 18,
+			"source" :  3,
+			"label" : "fin: 0:2 ,  path: 0:5 , ",
+			"size" : 7,
+			"level" : 2,
+			"style" : "",
+			"isred" :  1,
+			"issink" :  0,
+			"isblue" :  0,
+			"trace" :  "1 2 InitialAccess.ValidAccounts-LateralMovement.RemoteServices|Medium InitialAccess.ValidAccounts|Medium",
+			"data" :  {"final_counts":{"0":2},"path_counts":{"0":5},"symbol_counts":null,"total_final":2,"total_paths":5,"trans_counts":{"InitialAccess.ValidAccounts-LateralMovement.RemoteServices|Medium":"4","InitialAccess.ValidAccounts|Medium":"1"}}
+		}
+	],
+	"edges" : [
+		{
+			"id" : "0_1",
+			"source" : "0",
+			"target" : "1",
+			"name": "Persistence-PrivilegeEscalation|High",
+			"appearances": ""}
+,
+		{
+			"id" : "0_2",
+			"source" : "0",
+			"target" : "2",
+			"name": "Execution.UserExecution|Medium",
+			"appearances": ""}
+,
+		{
+			"id" : "0_3",
+			"source" : "0",
+			"target" : "3",
+			"name": "InitialAccess.ValidAccounts-LateralMovement.RemoteServices|Medium",
+			"appearances": ""}
+,
+		{
+			"id" : "0_4",
+			"source" : "0",
+			"target" : "4",
+			"name": "InitialAccess.ValidAccounts|Medium",
+			"appearances": ""}
+,
+		{
+			"id" : "0_5",
+			"source" : "0",
+			"target" : "5",
+			"name": "Persistence.AccountManipulation|High",
+			"appearances": ""}
+,
+		{
+			"id" : "0_6",
+			"source" : "0",
+			"target" : "6",
+			"name": "Persistence-PrivilegeEscalation|Medium",
+			"appearances": ""}
+,
+		{
+			"id" : "0_7",
+			"source" : "0",
+			"target" : "7",
+			"name": "InitialAccess-Discovery|Medium",
+			"appearances": ""}
+,
+		{
+			"id" : "0_8",
+			"source" : "0",
+			"target" : "8",
+			"name": "InitialAccess.Phishing-InitialAccess.Drive-byCompromise-Exfiltration.ExfiltrationOverWebService-CommandandControl.WebService-CommandandControl.ApplicationLayerProtocol|Medium",
+			"appearances": ""}
+,
+		{
+			"id" : "0_9",
+			"source" : "0",
+			"target" : "9",
+			"name": "CommandandControl.ApplicationLayerProtocol|Medium",
+			"appearances": ""}
+,
+		{
+			"id" : "0_10",
+			"source" : "0",
+			"target" : "10",
+			"name": "Persistence-PrivilegeEscalation|Low",
+			"appearances": ""}
+,
+		{
+			"id" : "0_11",
+			"source" : "0",
+			"target" : "11",
+			"name": "InitialAccess.ValidAccounts|High",
+			"appearances": ""}
+,
+		{
+			"id" : "0_12",
+			"source" : "0",
+			"target" : "12",
+			"name": "InitialAccess.Phishing|Medium",
+			"appearances": ""}
+,
+		{
+			"id" : "0_13",
+			"source" : "0",
+			"target" : "13",
+			"name": "DefenseEvasion.SystemBinaryProxyExecution|High",
+			"appearances": ""}
+,
+		{
+			"id" : "3_3",
+			"source" : "3",
+			"target" : "3",
+			"name": "InitialAccess.ValidAccounts-LateralMovement.RemoteServices|Medium",
+			"appearances": ""}
+,
+		{
+			"id" : "3_17",
+			"source" : "3",
+			"target" : "17",
+			"name": "Persistence.AccountManipulation|Medium",
+			"appearances": ""}
+,
+		{
+			"id" : "3_18",
+			"source" : "3",
+			"target" : "18",
+			"name": "InitialAccess.ValidAccounts|Medium",
+			"appearances": ""}
+
+	]
+}
