@@ -11,7 +11,7 @@ import logging
 
 from sage_package.sage_func import load_data, aggregate_into_episodes, host_episode_sequences, break_into_subbehaviors, \
                                     generate_traces, loadmodel, encode_sequences, find_severe_states, make_condensed_data, \
-                                    traverse, make_av_data, make_AG, translate, small_mapping, micro, rev_smallmapping
+                                    traverse, make_av_data, make_AG, translate, small_mapping, micro, rev_smallmapping, macro_inv, micro2macro
 from sage_package.prediction import pdfa_predict_next_action, parse_file
 
 def plot_alert_num_time(alerts, interval):
@@ -172,74 +172,161 @@ def update_condensed_data(alerts, keys, state_traces, med_states, sev_states, co
     return condensed_data
 
 
-def make_AG_RT(condensed_v_data, condensed_data, state_groups, sev_sinks, datafile, expname, batch_no):
+graphviz_colors = [
+    "blue",
+    "blueviolet",
+    "brown",
+    "cadetblue",
+    "chocolate",
+    "coral",
+    "cornflowerblue",
+    "crimson",
+    "darkblue",
+    "darkcyan",
+    "darkgoldenrod",
+    "darkgray",
+    "darkgreen",
+    "darkkhaki",
+    "darkmagenta",
+    "darkolivegreen",
+    "darkorange",
+    "darkorchid",
+    "darkred",
+    "darksalmon",
+    "darkseagreen",
+    "darkslateblue",
+    "darkslategray",
+    "darkturquoise",
+    "darkviolet",
+    "deeppink",
+    "deepskyblue",
+    "dimgray",
+    "dodgerblue",
+    "firebrick",
+    "forestgreen",
+    "gold",
+    "goldenrod",
+    "gray",
+    "green",
+    "greenyellow",
+    "hotpink",
+    "indianred",
+    "indigo",
+    "khaki",
+    "lavender",
+    "lawngreen",
+    "lemonchiffon",
+    "lime",
+    "limegreen",
+    "maroon",
+    "mediumaquamarine",
+    "mediumblue",
+    "mediumorchid",
+    "mediumpurple",
+    "mediumseagreen",
+    "mediumslateblue",
+    "mediumspringgreen",
+    "mediumturquoise",
+    "mediumvioletred",
+    "midnightblue",
+    "mistyrose",
+    "moccasin",
+    "navy",
+    "olive",
+    "olivedrab",
+    "orange",
+    "orangered",
+    "orchid",
+    "palegoldenrod",
+    "palegreen",
+    "paleturquoise",
+    "palevioletred",
+    "papayawhip",
+    "peachpuff",
+    "peru",
+    "pink",
+    "plum",
+    "powderblue",
+    "purple",
+    "rebeccapurple",
+    "red",
+    "rosybrown",
+    "royalblue",
+    "saddlebrown",
+    "salmon",
+    "sandybrown",
+    "seagreen",
+    "sienna",
+    "skyblue",
+    "slateblue",
+    "slategray",
+    "springgreen",
+    "steelblue",
+    "tan",
+    "teal",
+    "thistle",
+    "tomato",
+    "turquoise",
+    "violet",
+]        
+
+def make_low_pred_AG(condensed_data, sev_sinks, datafile, expname):
     global w
-    SAVE = 1
-    tcols = {
-        't0': 'maroon',
-        't1': 'orange',
-        't2': 'darkgreen',
-        't3': 'blue',
-        't4': 'magenta',
-        't5': 'purple',
-        't6': 'brown',
-        't7': 'tomato',
-        't8': 'turquoise',
-        't9': 'skyblue',
-    }
-    if SAVE:
-        try:
-            dirname = expname + 'AGs/' + str(batch_no)
-            if os.path.isdir('dirname'):
-                shutil.rmtree(dirname)
-            os.mkdir(dirname)
-        except:
-            print("Can't create directory here")
-        else:
-            print("Successfully created directory for AGs")
+    try:
+        dirname = expname + 'AGs/predicted'
+        if os.path.isdir(dirname):
+            shutil.rmtree(dirname)
+        os.mkdir(dirname)
+    except:
+        print("Can't create directory here")
+    else:
+        print("Successfully created directory for AGs")
 
     shapes = ['oval', 'oval', 'oval', 'box', 'box', 'box', 'box', 'hexagon', 'hexagon', 'hexagon', 'hexagon', 'hexagon']
     in_main_model = [[episode[3] for episode in sequence] for sequence in condensed_data.values()] # all IDs in the main model (including high-sev sinks)
     in_main_model = set([item for sublist in in_main_model for item in sublist])
 
-    ser_total = dict()
     simple = dict()
-    total_victims = set([x.split('-')[1] for x in list(condensed_v_data.keys())]) # collect all victim IPs
 
-    # true if we want only MAS, false if we want mas+service
-    OBJ_ONLY = False # Experiment 1: mas+service or only mas?
-    attacks = set()
-    for episodes in condensed_data.values(): # iterate over all episodes and collect the objective nodes.
-        for ep in episodes: # iterate over every episode
-            # only high severity will have triple digit mcat
-            if len(str(ep[2])) == 3: # If high-seveity, then include it
-                cat = micro[ep[2]].split('.')[1]
-                vert_name = None
-                if OBJ_ONLY:
-                    vert_name = cat
-                else:
-                    vert_name = cat+'|'+ep[4] # cat + service
-                attacks.add(vert_name)
+    predicted_eps = dict()
+    for victim, episodes in condensed_data.items(): # iterate over all episodes and collect the objective nodes.
+        # if last ep in chain is predicted one with low or med severity
+        if len(episodes) > 0 and episodes[-1][1] == -1 and len(str(rev_smallmapping[episodes[-1][2].split('|')[0]])) < 3:
+            ep = episodes[-1]
+            #cat = episodes[-1][2].split('|')[0]
+            cat = micro[rev_smallmapping[ep[2].split('|')[0]]].split('.')[1]
+            vert_name = cat + '|' + ep[2].split('|')[1] # cat + service
+            if vert_name not in predicted_eps.keys():
+                predicted_eps[vert_name] = set([victim])
+            else:
+                predicted_eps[vert_name].add(victim)
     # list of objectives
-    attacks = list(attacks)
+    logger.debug(f'predicted EPS {predicted_eps}')
 
-    for int_victim in total_victims:  # iterate over every victim
-        print('\n!!! Rendering AGs for Victim ', int_victim,'\n',  sep=' ', end=' ', flush=True)
-        for attack in attacks: # iterate over every attack
-            print('\t!!!! Objective ', attack,'\n',  sep=' ', end=' ', flush=True)
-            collect = dict()
-            
+    for attack, victims in predicted_eps.items(): # iterate over every attack
+        print('\t!!!! Objective ', attack,'\n',  sep=' ', end=' ', flush=True)
+        AGname = attack.replace('|', '').replace('_','').replace('-','').replace('(','').replace(')', '')
+        lines = []
+        lines.append((0,'digraph '+ AGname + ' {'))
+        lines.append((0,'rankdir="BT"; \n graph [ nodesep="0.1", ranksep="0.02"] \n node [ fontname=Arial, fontsize=24,penwidth=3]; \n edge [ fontname=Arial, fontsize=20,penwidth=5 ];'))
+        root_node = translate(attack, False, True)
+        lines.append((0, '"'+root_node+'" [shape=doubleoctagon, style=filled, fillcolor=orange];'))
+        lines.append((0, '{ rank = max; "'+root_node+'"}'))
+
+        attacker_cnt = 0
+        for int_victim in victims:
+            prob = 0
+            team_attacker = int_victim.split('->')[0] # team+attacker
+            victim =  int_victim.split('->')[1]
+            print('\n!!! Rendering AGs for Victim ', victim,'\n',  sep=' ', end=' ', flush=True)
             # dictionary with key: attacker, value list of episodes for the current objective
             team_level = dict()
             # will contain current objective that was found in an episode list
-            observed_obj = set() # variants of current objective
             nodes = {}
             vertices, edges = 0, 0
-            for att, episodes in condensed_data.items(): # iterate over (a,v): [episode, episode, episode]
-                if int_victim not in att: # if it's not the right victim, then don't process further
-                    continue
-                vname_time = []
-                for ep in episodes:
+            vname_time = []
+            for ep in condensed_data[int_victim]: # iterate over (a,v): [episode, episode, episode]
+                if ep[1] != -1:
                     start_time = round(ep[0]/1.0)
                     end_time = round(ep[1]/1.0)
                     cat = micro[ep[2]].split('.')[1]
@@ -254,72 +341,35 @@ def make_AG_RT(condensed_v_data, condensed_data, state_groups, sev_sinks, datafi
                     vert_name = cat + '|'+ ep[4] + stateID
                     
                     vname_time.append((vert_name, start_time, end_time, signs, timestamps))
-                    
-                if not sum([True if attack in x[0] else False for x in vname_time]): # if the objective is never reached, don't process further
-                    continue
-
-                # if it's an episode sequence targetting the requested victim and obtaining the requested objective,
-                attempts = []
-                sub_attempt = []
-                for (vname, start_time, end_time, signs, ts) in vname_time: # cut each attempt until the requested objective
-                    sub_attempt.append((vname, start_time, end_time, signs, ts)) # add the vertex in path
-                    if attack in vname: # if it's the objective
-                        if len(sub_attempt) <= 1: ## If only a single node, reject
-                            sub_attempt = []
-                            continue
-                        attempts.append(sub_attempt)
-                        sub_attempt = []
-                        observed_obj.add(vname)
-                        continue
-                team_attacker = att.split('->')[0] # team+attacker
-                if team_attacker not in team_level.keys():
-                    team_level[team_attacker] = []
-
-                team_level[team_attacker].extend(attempts)
-                #team_level[team_attacker] = sorted(team_level[team_attacker], key=lambda item: item[1])
-            #print(observed_obj)
-            # print('elements in graph', team_level.keys(), sum([len(x) for x in team_level.values()]))
-
-            for k, v in team_level.items():
-                print(k)
-                for attempts in v:
-                    for attempt in attempts:
-                        print(attempt)
-                    print('attempt finished')
-                print()
-
-            if sum([len(x) for x in team_level.values()]) == 0: # if no team obtains this objective or targets this victim, don't generate its AG.
-                print('SKIPPING THIS')
-                continue
-            
-            AGname = attack.replace('|', '').replace('_','').replace('-','').replace('(','').replace(')', '')
-            lines = []
-            lines.append((0,'digraph '+ AGname + ' {'))
-            lines.append((0,'rankdir="BT"; \n graph [ nodesep="0.1", ranksep="0.02"] \n node [ fontname=Arial, fontsize=24,penwidth=3]; \n edge [ fontname=Arial, fontsize=20,penwidth=5 ];'))
-            root_node = translate(attack, root=int_victim)
-            lines.append((0, '"'+root_node+'" [shape=doubleoctagon, style=filled, fillcolor=salmon];'))
-            lines.append((0, '{ rank = max; "'+root_node+'"}'))
-
-            for obj in list(observed_obj): # for each variant of objective, add a link to the root node, and determine if it's sink
-                lines.append((0,'"'+translate(obj)+'" -> "'+root_node+'"'))
-
-                sinkflag = False
-                for sink in sev_sinks:
-                    if obj.endswith(sink):
-                        sinkflag = True
-                        break
-                if sinkflag:
-                    lines.append((0,'"'+translate(obj)+'" [style="filled,dotted", fillcolor= salmon]'))
                 else:
-                    lines.append((0,'"'+translate(obj)+'" [style=filled, fillcolor= salmon]'))
+                    if ep[3] < 0.001:
+                        prob = "< 0.001"
+                    else:
+                        prob = "%.3f" % ep[3]
+            
+                    
+            # if it's an episode sequence targetting the requested victim and obtaining the requested objective,
+            attempts = [vname_time]
+            if team_attacker not in team_level.keys():
+                team_level[team_attacker] = []
 
-            samerank = '{ rank=same; "'+ '" "'.join([translate(x) for x in observed_obj]) # all obj variants have the same rank
+            team_level[team_attacker].extend(attempts)
+
+            obj = attack
+            mas = macro_inv[micro2macro['MicroAttackStage.' + obj.split('|')[0]]]
+            shape = shapes[mas]
+            lines.append((0,'"'+translate(obj, root=victim, pred_action=True)+'" -> "'+root_node+'"'))
+            lines.append((0,'"'+translate(obj, root=victim, pred_action=True)+'" [shape=' + shape + ', style="filled,dashed", fillcolor= orange]'))
+
+            samerank = '{ rank=same; "'+ '" "'.join([translate(obj, root=victim, pred_action=True)]) # all obj variants have the same rank
             samerank += '"}'
             lines.append((0,samerank))
 
             already_addressed = set()
             for attackerID,attempts in team_level.items(): # for every attacker that obtains this objective
-                color = tcols[attackerID.split('-')[0]] # team color
+                #color = tcols[attackerID.split('-')[0]] # team color
+                color = graphviz_colors[attacker_cnt]
+                attacker_cnt += 1
                 ones = [''.join([action[0] for action in attempt]) for attempt in attempts]
                 unique = len(set(ones)) # count exactly unique attempts
                 #print(unique)
@@ -334,10 +384,6 @@ def make_AG_RT(condensed_v_data, condensed_data, state_groups, sev_sinks, datafi
                             nodes[action[0]] = set()
                         nodes[action[0]].update(action[3])
                     # nodes will contain a set of signatures
-                    print('NODES')
-                    print(attackerID)
-                    print(attempt)
-                    print(nodes)
                     for vid,(vname,start_time,end_time,signs,_) in enumerate(attempt): # iterate over each action in an attempt
                         if vid == 0: # if first action
                             if 'Sink' in vname: # if sink, make dotted
@@ -375,66 +421,56 @@ def make_AG_RT(condensed_v_data, condensed_data, state_groups, sev_sinks, datafi
                         gap = round((ts2[0] - ts1[1]).total_seconds())
                         if vid == 0:  # first transition, add attacker IP
                             lines.append((time1, '"' + translate(vname1) + '"' + ' -> ' + '"' + translate(vname2) +
-                                          '" [ color=' + color + '] ' + '[label=<<font color="' + color + '"> start_next: ' + _to_first + '<br/>gap: ' +
-                                          str(gap) + 'sec<br/>end_prev: ' + _from_last + '</font><br/><font color="' + color + '"><b>Attacker: ' +
-                                          attackerID.split('-')[1] + '</b></font>>]'
-                                          ))
+                                            '" [ color=' + color + '] ' + '[label=<<font color="' + color + '"> start_next: ' + _to_first + '<br/>gap: ' +
+                                            str(gap) + 'sec<br/>end_prev: ' + _from_last + '</font><br/><font color="' + color + '"><b>Attacker: ' +
+                                            attackerID.split('-')[1] + '</b></font>>]'
+                                            ))
                         else:
                             lines.append((time1, '"' + translate(vname1) + '"' + ' -> ' + '"' + translate(vname2) +
-                                          '"' + ' [ label="start_next: ' + _to_first + '\ngap: ' +
-                                          str(gap) + 'sec\nend_prev: ' + _from_last + '"]' + '[ fontcolor="' + color + '" color=' + color + ']'
-                                          ))
+                                            '"' + ' [ label="start_next: ' + _to_first + '\ngap: ' +
+                                            str(gap) + 'sec\nend_prev: ' + _from_last + '"]' + '[ fontcolor="' + color + '" color=' + color + ']'
+                                            ))
+                    # add transition to predicted node
+                    lines.append((attempt[-1][1] + 0.000001, '"' + translate(attempt[-1][0]) + '"' + ' -> ' + '"' + translate(obj, root=victim, pred_action=True) +
+                                  '" [ label="Probability\n ' + prob + '"] [style="dashed"] [ fontcolor="' + color + '" color=' + color + ']'))
 
-            for vname, signatures in nodes.items(): # Go over all vertices again and define their shapes + make high-sev sink states dotted
-                mas = vname.split('|')[0]
-                mas = macro_inv[micro2macro['MicroAttackStage.'+mas]]
-                shape = shapes[mas]
-                if shape == shapes[0] or vname.split('|')[2] in already_addressed: # if it's oval, we dont do anything because its not high-sev sink
-                    lines.append((0,'"'+translate(vname)+'" [shape='+shape+']'))
-                else:
-                    sinkflag = False
-                    for sink in sev_sinks:
-                        if vname.endswith(sink):
-                            sinkflag = True
-                            break
-                    if sinkflag:
-                        lines.append((0,'"'+translate(vname)+'" [style="dotted", shape='+shape+']'))
-                    else:
+                for vname, signatures in nodes.items(): # Go over all vertices again and define their shapes + make high-sev sink states dotted
+                    mas = vname.split('|')[0]
+                    mas = macro_inv[micro2macro['MicroAttackStage.'+mas]]
+                    shape = shapes[mas]
+                    if shape == shapes[0] or vname.split('|')[2] in already_addressed: # if it's oval, we dont do anything because its not high-sev sink
                         lines.append((0,'"'+translate(vname)+'" [shape='+shape+']'))
-                # add tooltip
-                lines.append((1, '"'+translate(vname)+'"'+' [tooltip="'+ "\n".join(signatures) +'"]'))
-            lines.append((1000,'}'))
+                    else:
+                        sinkflag = False
+                        for sink in sev_sinks:
+                            if vname.endswith(sink):
+                                sinkflag = True
+                                break
+                        if sinkflag:
+                            lines.append((0,'"'+translate(vname)+'" [style="dotted", shape='+shape+']'))
+                        else:
+                            lines.append((0,'"'+translate(vname)+'" [shape='+shape+']'))
+                    # add tooltip
+                    lines.append((1, '"'+translate(vname)+'"'+' [tooltip="'+ "\n".join(signatures) +'"]'))
+                #lines.append((1000,'}'))
 
-            for l in lines: # count vertices and edges
-                if '->' in l[1]:
-                    edges +=1
-                elif 'shape=' in l[1]:
-                    vertices +=1
-            simple[int_victim+'-'+AGname] = (vertices, edges)
+                for l in lines: # count vertices and edges
+                    if '->' in l[1]:
+                        edges +=1
+                    elif 'shape=' in l[1]:
+                        vertices +=1
+                simple[int_victim+'-'+AGname] = (vertices, edges)
 
-            #print('# vert', vertices, '# edges: ', edges,  'simplicity', vertices/float(edges))
-            if SAVE:
-                out_f_name = datafile+'-attack-graph-for-victim-'+int_victim+'-'+AGname
-                f = open(dirname+'/'+ out_f_name +'.dot', 'w')
-                for l in lines:
-                    f.write(l[1])
-                    f.write('\n')
-                f.close()
+        lines.append((1000,'}'))
 
-                os.system("dot -Tpng "+dirname+'/'+out_f_name+".dot -o "+dirname+'/'+out_f_name+".png")
-                #os.system("dot -Tsvg "+dirname+'/'+out_f_name+".dot -o "+dirname+'/'+out_f_name+".svg")
-                if DOCKER:
-                    os.system("rm "+dirname+'/'+out_f_name+".dot")
-                #print('~~~~~~~~~~~~~~~~~~~~saved')
-            print('#', sep=' ', end=' ', flush=True)
-        #print('total high-sev states:', len(path_info))
-        #path_info = dict(sorted(path_info.items(), key=lambda kv: kv[0]))
-        #for attackerID,v in path_info.items():
-        #    print(attackerID)
-        #    for t,val in v.items():
-        #       print(t, val)
-    #for attackerID,v in ser_total.items():
-    #    print(attackerID, len(v), set([x.split('|')[0] for x in v]))
+        out_f_name = datafile + '-attack-graph-for-victim-' + victim + '-' + AGname
+        f = open(dirname+'/'+ out_f_name +'.dot', 'w')
+        for l in lines:
+            f.write(l[1])
+            f.write('\n')
+        f.close()
+
+        os.system("dot -Tpng "+dirname+'/'+out_f_name+".dot -o "+dirname+'/'+out_f_name+".png")
 
 
 def setup_logging(logfile):
@@ -467,7 +503,7 @@ setup_logging('out.log')
 # time interval to remove duplicates
 t = 1
 w = 150
-batch_interval_sec = 300
+batch_interval_sec = 1200
 traces_rt_file = '/Users/ionbabalau/uni/thesis/SAGE/traces/traces_rt.txt'
 modelfile = traces_rt_file + '.ff.final.json'
 sinkfile = traces_rt_file + '.ff.finalsinks.json'
@@ -599,19 +635,13 @@ for batch_no, batch in enumerate(batched_alerts):
             else:
                 logger.debug('EPISODE ' + str(i) + ' start/end times ' + str(ep[0]) + ' ' + str(ep[1]) + ' mcat ' + micro[ep[2]].split('.')[1] + ' service ' + ep[4] + ' STATE ID ' + str(ep[3]))
         logger.debug('\n')
-    # logger.debug("EP SUBSEQUCES")
-    # for k, eps in zip(keys, alerts):
-    #     logger.debug(k)
-    #     for i, ep in enumerate(eps):
-    #         logger.debug('EPISODE ' + str(i) + ' start/end times ' + str(ep[0]) + ' ' + str(ep[1]) + ' mcat ' + micro[ep[2]].split('.')[1])
-    # logger.debug("EP SUBSEQUCES END")
-         
 
-    #(condensed_a_data, condensed_v_data) = make_av_data(condensed_data)
-    #make_AG(condensed_v_data, condensed_data, None, sev_sinks, 'traces_rt.txt', '/Users/ionbabalau/uni/thesis/SAGE/traces/', batch_no)
+    (condensed_a_data, condensed_v_data) = make_av_data(condensed_data)
+
     #logger.debug(f'PREDICTED DICT {predicted_eps}')
-    # if batch_no == 40:
-    #     break
+make_low_pred_AG(condensed_data, sev_sinks, 'traces_rt.txt', '/Users/ionbabalau/uni/thesis/SAGE/traces/')
+make_AG(condensed_v_data, condensed_data, None, sev_sinks, 'traces_rt.txt', '/Users/ionbabalau/uni/thesis/SAGE/traces/', batch_no)
+        # break
 
 logger.debug(f'CORRECTLY PREDICTED {tp}, CORRECTLY PREDICTED AS ONLY {tp_as}, WRONG PREDS {wrong_pred}')
 logger.debug(f'ACCURACY {tp/(tp + wrong_pred)}')

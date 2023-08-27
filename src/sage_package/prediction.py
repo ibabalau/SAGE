@@ -26,6 +26,7 @@ import copy
 import queue
 from sklearn.model_selection import KFold
 from sklearn.metrics import accuracy_score
+import json
 
 def parse_file(f):
     fi = open(f, 'r')
@@ -231,9 +232,7 @@ def fix_syntax(fname, is_sink_file = False):
             file.write(filedata)
 
 
-def create_structs(data, unique_sym):
-    global total_edges
-    global total_nodes
+def create_structs(data, unique_sym, train_data):
     # spdfa['node_id'] -> {'total_cnt', 'symbol', 'fin', 'paths', 'transitions' = {'symbol': {'dnode', 'count'}}}
     spdfa = {}
     for node in data['nodes']:
@@ -247,9 +246,7 @@ def create_structs(data, unique_sym):
         spdfa[edge['target']]['symbol'] = edge['name']
 
     nodes = [str(x['id']) for x in data['nodes']]
-    total_nodes.append(len(nodes))
     edges = [x['name'] for x in data['edges']]
-    total_edges.append(len(edges))
 
     total_symb_cnt = {key: 0 for key in unique_sym}
     for trace in train_data:
@@ -604,18 +601,25 @@ def get_attack_stage(symbol):
 
 def find_path(pdfa, trace):
     node = '0'
+    prob = 1
     for symbol in trace:
         if pdfa[node]['transitions'] == {}:
-            return 'None', 1
+            return ('None', 0), 1
         else:
             if symbol in pdfa[node]['transitions']:
+                prob = prob * pdfa[node]['transitions'][symbol]['count']/pdfa[node]['paths']
                 node = pdfa[node]['transitions'][symbol]['dnode']
             else:
                 trans = pdfa[node]['transitions']
-                node = sorted(trans.items(), key=lambda x: x[1]['count'], reverse=True)[0][1]['dnode']
+                # get next node based on maximum probability
+                next_node = sorted(trans.items(), key=lambda x: x[1]['count'], reverse=True)[0]
+                symb = next_node[0]
+                prob = prob * pdfa[node]['transitions'][symb]['count']/pdfa[node]['paths']
+                node = next_node[1]['dnode']
+
     if pdfa[node]['transitions'] == {}:
-        return 'None', 0
-    return sorted(pdfa[node]['transitions'].items(), key=lambda x: x[1]['count'], reverse=True)[0][0], 0
+        return ('None', 0), 0
+    return (sorted(pdfa[node]['transitions'].items(), key=lambda x: x[1]['count'], reverse=True)[0][0], prob), 0
 
 def test_pdfa(pdfa, X_test, Y_test, Y_test_as):
     global result_pdfa
@@ -624,7 +628,7 @@ def test_pdfa(pdfa, X_test, Y_test, Y_test_as):
     skip_cnt = 0
     start_time = time.time()
     for tt in X_test:
-        na, skip = find_path(pdfa, tt)
+        (na, prob), skip = find_path(pdfa, tt)
         y_pred.append(na)    
         skip_cnt += skip  
         # if get_attack_stage(pred[0]) == get_attack_stage(true_action):
@@ -687,180 +691,217 @@ def bar_plot():
     # Display the plot
     fig.savefig('plots/severity_distrib.pdf', dpi=300)
 
+def line_plot(x, values, keys):
+    fig, ax = plt.subplots()
+
+    # Plot the values
+    x_axis = x
+    for key, val in zip(keys, values):
+        y_values = val
+        #y_values = [np.sum(sublist)/len(sublist) for k,sublist in val.items()]
+        #x_axis = [k for k, _ in val.items()]
+        ax.plot(x_axis, y_values, label=key, linestyle='-', marker='o')
+
+    x_ticks = [1, 5] + [i for i in range (10, 100, 5)] + [x[-1]]
+    # Set the title and axis labels
+    ax.set_title('Accuracy for different multiplication factors', fontsize=13, fontfamily='serif')
+    ax.set_xlabel('Factor', fontsize=12, fontfamily='serif')
+    ax.set_ylabel('Accuracy', fontsize=12, fontfamily='serif')
+    ax.set_xticks(x_ticks)
+    ax.set_xticklabels(str(i) for i in x_ticks)
+    #ax.set_yscale('log')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    #ax.set_frame_on(False)
+
+    ax.legend()
+    ax.legend(loc='lower left')
+
+    fig.savefig("plots/final_plots/factors.pdf", dpi=300)
+
 dir_path = '/Users/ionbabalau/uni/thesis/SAGE'
 flexfringe_path = '/Users/ionbabalau/uni/thesis/FlexFringe'
 output_path = '/Users/ionbabalau/uni/thesis/SAGE/output_pred'
 tr_file_name = dir_path + '/pred_traces/trace_all.txt'
 USE_SINKS = True
+result_dict = {strategy: {key:[] for key in Metric} for strategy in Strategy}
 
 ### MAIN START ###
-result_dict = {strategy: {key:[] for key in Metric} for strategy in Strategy}
-result_pdfa = {key:[] for key in Metric}
-conf_severities = {'LOW':{'LOW':0, 'MEDIUM':0, 'HIGH':0, 'None': 0}, 'MEDIUM':{'LOW':0, 'MEDIUM':0, 'HIGH':0, 'None': 0}, 'HIGH':{'LOW':0, 'MEDIUM':0, 'HIGH':0, 'None': 0}}
-accuracy_per_sev = {'LOW':[], 'MEDIUM':[], 'HIGH':[]}
-test_set_preds = []
-true_preds = []
 
-cnt = 10
-max_len = 6
-lens = [i for i in range(300, 501, 25)]
-total_nodes = []
-total_edges = []
+# result_pdfa = {key:[] for key in Metric}
+# conf_severities = {'LOW':{'LOW':0, 'MEDIUM':0, 'HIGH':0, 'None': 0}, 'MEDIUM':{'LOW':0, 'MEDIUM':0, 'HIGH':0, 'None': 0}, 'HIGH':{'LOW':0, 'MEDIUM':0, 'HIGH':0, 'None': 0}}
+# accuracy_per_sev = {'LOW':[], 'MEDIUM':[], 'HIGH':[]}
+# test_set_preds = []
+# true_preds = []
 
-traces = parse_file(tr_file_name)
-as_traces = []
-for trace in traces:
-    #trace = [get_attack_stage(symb) for symb in trace]
-    trace.reverse()
-    #as_traces.append(trace)
-#traces = as_traces
+# cnt = 15
+# K = 13
+# max_len = 6
+# lens = [i for i in range(300, 501, 25)]
+# total_nodes = []
+# total_edges = []
 
-accuracy_per_as = {'LOW':0, 'MEDIUM':0, 'HIGH':0}
-as_count = {'LOW':0, 'MEDIUM':0, 'HIGH':0}
-for trace in traces:
-    last = trace[-1]
-    as_count[as_to_sev[get_attack_stage(last)]] += 1
-print(as_count)
+# traces = parse_file(tr_file_name)
+# as_traces = []
+# for trace in traces:
+#     #trace = [get_attack_stage(symb) for symb in trace]
+#     trace.reverse()
+#     #as_traces.append(trace)
+# #traces = as_traces
 
-k_accuracies = {k:[] for k in Strategy}
+# accuracy_per_as = {'LOW':0, 'MEDIUM':0, 'HIGH':0}
+# as_count = {'LOW':0, 'MEDIUM':0, 'HIGH':0}
+# for trace in traces:
+#     last = trace[-1]
+#     as_count[as_to_sev[get_attack_stage(last)]] += 1
+# print(as_count)
 
-unique_trace = [list(y) for y in set([tuple(x) for x in traces])]
-unique_trace = [x for x in unique_trace  if len(x) <= max_len]
-factors = [i for i in range (2, 11, 2)]
-factor = 42
-accuracies_fact_dict = {strategy: {key: [] for key in factors} for strategy in [Strategy.AS_MATCH, Strategy.ALL]}
-result_dict = {strategy: {key:[] for key in Metric} for strategy in Strategy}
-kf = KFold(n_splits=cnt, shuffle=True)#, random_state=42)
-for train_index, test_index in kf.split(unique_trace):
-    test_data = [unique_trace[i] for i in test_index]
-    train_data = []
-    for trace in traces:
-        if trace not in test_data:
-            train_data.append(trace)
-    train_data = train_data[:500]
-    # now test with pdfa
-    full_model_name = create_train_test_traces(train_data, test_data)
+# k_accuracies = {k:[] for k in Strategy}
+
+# unique_trace = [list(y) for y in set([tuple(x) for x in traces])]
+# unique_trace = [x for x in unique_trace  if len(x) <= max_len]
+# #factors = [1, 2, 5, 8] + [i for i in range (10, 100, 5)]
+# factor = 75
+# #accuracies_fact_dict = {strategy: {key: [] for key in factors} for strategy in [Strategy.AS_MATCH, Strategy.ALL]}
+# #result_dict = {strategy: {key:[] for key in Metric} for strategy in Strategy}
+# #for cnt in range(5, 16):
+# kf = KFold(n_splits=K, shuffle=True)
+# for train_index, test_index in kf.split(unique_trace):
+#     #for factor in factors:
+#     test_data = [unique_trace[i] for i in test_index]
+#     print(test_data)
+#     train_data = []
+#     for trace in traces:
+#         if trace not in test_data:
+#             train_data.append(trace)
+#     # train_data = train_data[:500]
+#     # now test with pdfa
+#     full_model_name = create_train_test_traces(train_data, test_data)
+#     unique_sym = set([item for sublist in train_data for item in sublist])
+#     test_data = sorted(test_data, key=len)
+#     X_test = [trace[:-1] for trace in test_data]
+#     Y_test = [trace[-1] for trace in test_data]
+#     Y_test_as = [get_attack_stage(symb) for symb in Y_test]
+
+#     if USE_SINKS:
+#         path_to_ini = flexfringe_path + '/ini/spdfa-config-sinks.ini'
+#     else:
+#         path_to_ini = flexfringe_path + '/ini/spdfa-config.ini'
+
+#     print('------ Learning SPDFA ---------')
+#     # Learn S-PDFA
+#     flexfringe(full_model_name, ini=path_to_ini)
+
+#     #os.system('dot -Tpng ' + full_model_name + '.ff.final.dot -o ' + output_path + '/main_model.png')
+#     fix_syntax(full_model_name)
+
+#     print('------ Loading and traversing SPDFA ---------')
+#     model, data = loadmodel(full_model_name + '.ff.final.json')
+#     os.system('cp ' + full_model_name + '.ff.final.json ' + output_path + '/main.json')
+#     os.system('cp ' + full_model_name + '.ff.finalsinks.json '+ output_path + '/sinks.json')
+
+#     spdfa, rev_spdfa, symbol_to_state = create_structs(data, unique_sym, train_data)
+
+#     test_pdfa(spdfa, X_test, Y_test, Y_test_as)
+
+
+#     for trace in train_data:
+#         trace.reverse()
+#     full_model_name = create_train_test_traces(train_data, test_data)
+#     unique_sym = set([item for sublist in train_data for item in sublist])
+
+#     if USE_SINKS:
+#         path_to_ini = flexfringe_path + '/ini/spdfa-config-sinks.ini'
+#     else:
+#         path_to_ini = flexfringe_path + '/ini/spdfa-config.ini'
+
+#     print('------ Learning SPDFA ---------')
+#     # Learn S-PDFA
+#     flexfringe(full_model_name, ini=path_to_ini)
+
+#     #os.system('dot -Tpng ' + full_model_name + '.ff.final.dot -o ' + output_path + '/main_model.png')
+
+#     fix_syntax(full_model_name)
+
+#     print('------ Loading and traversing SPDFA ---------')
+#     model, data = loadmodel(full_model_name + '.ff.final.json')
+#     os.system('cp ' + full_model_name + '.ff.final.json ' + output_path + '/main.json')
+#     os.system('cp ' + full_model_name + '.ff.finalsinks.json '+ output_path + '/sinks.json')
+
+#     spdfa, rev_spdfa, symbol_to_state = create_structs(data, unique_sym, train_data)
+
+#     test_baseline_rand(Y_test, Y_test_as)
+#     test_baseline(train_data, X_test, Y_test, Y_test_as, unique_sym)
+#     test_pred_sum(spdfa, rev_spdfa, X_test, Y_test, Y_test_as, Strategy.FULL_MATCH, factor)
+#     print('------------------------------------------')
+#     test_pred_sum(spdfa, rev_spdfa, X_test, Y_test, Y_test_as, Strategy.AS_MATCH, factor)
+#     print('------------------------------------------')
+#     test_pred_sum(spdfa, rev_spdfa, X_test, Y_test, Y_test_as, Strategy.ALL, factor)
+#     for trace in train_data:
+#         trace.reverse()
+#     #accuracies_fact_dict[Strategy.AS_MATCH][factor].append(result_dict[Strategy.AS_MATCH][Metric.ACCURACY][0])
+#     #accuracies_fact_dict[Strategy.ALL][factor].append(result_dict[Strategy.ALL][Metric.ACCURACY][0])
+# # for k in Strategy:
+#     #     k_accuracies[k].append(sum(result_dict[k][Metric.ACCURACY])/len(result_dict[k][Metric.ACCURACY]))
+#     #result_dict = {strategy: {key:[] for key in Metric} for strategy in Strategy}
+# #print(accuracies_fact_dict)
+# #as_match = [sum(accuracies_fact_dict[Strategy.AS_MATCH][factor])/len(accuracies_fact_dict[Strategy.AS_MATCH][factor]) for factor in factors]
+# #full_match = [sum(accuracies_fact_dict[Strategy.ALL][factor])/len(accuracies_fact_dict[Strategy.ALL][factor]) for factor in factors]
+
+# #line_plot(factors, [as_match, full_match], [Strategy.AS_MATCH, Strategy.ALL])
+
+
+# print('-----------')
+# for strat in Strategy:
+#     print(strat)
+#     for metric in Metric:
+#         if len(result_dict[strat][metric]) != 0:
+#             print(metric, sum(result_dict[strat][metric])/len(result_dict[strat][metric]))
+#     print()
+
+# print()
+# print('Strategy.PDFA')
+# for metric in Metric:
+#     if len(result_pdfa[metric]) != 0:
+#         print(metric, sum(result_pdfa[metric])/len(result_pdfa[metric]))
+# print()
+
+#     # print('nodes', np.sum(total_nodes)/len(total_nodes), 'edges', np.sum(total_edges)/len(total_edges))
+
+# for k,v in accuracy_per_sev.items():
+#     print(k, np.sum(v)/len(v))
+
+#     # from sklearn.metrics import confusion_matrix
+#     # confusion_matrix_result = confusion_matrix(true_preds, test_set_preds, labels=['LOW', 'MEDIUM', 'HIGH', 'None'])
+
+#     # print(np.unique(true_preds))
+#     # print("Confusion Matrix:")
+#     # print(confusion_matrix_result)
+
+# #def predict_next_action(input):
+
+def train_pdfa():
+    tr_file_name = '/Users/ionbabalau/uni/thesis/SAGE/pred_traces/traces_team125_pdfa.txt'
+    train_data = parse_file(tr_file_name)
     unique_sym = set([item for sublist in train_data for item in sublist])
-    test_data = sorted(test_data, key=len)
-    X_test = [trace[:-1] for trace in test_data]
-    Y_test = [trace[-1] for trace in test_data]
-    Y_test_as = [get_attack_stage(symb) for symb in Y_test]
-
-    if USE_SINKS:
-        path_to_ini = flexfringe_path + '/ini/spdfa-config-sinks.ini'
-    else:
-        path_to_ini = flexfringe_path + '/ini/spdfa-config.ini'
+    path_to_ini = flexfringe_path + '/ini/spdfa-config-sinks.ini'
 
     print('------ Learning SPDFA ---------')
     # Learn S-PDFA
-    flexfringe(full_model_name, ini=path_to_ini)
-
-    #os.system('dot -Tpng ' + full_model_name + '.ff.final.dot -o ' + output_path + '/main_model.png')
-    fix_syntax(full_model_name)
+    flexfringe(tr_file_name, ini=path_to_ini)
+    fix_syntax(tr_file_name)
 
     print('------ Loading and traversing SPDFA ---------')
-    model, data = loadmodel(full_model_name + '.ff.final.json')
-    os.system('cp ' + full_model_name + '.ff.final.json ' + output_path + '/main.json')
-    os.system('cp ' + full_model_name + '.ff.finalsinks.json '+ output_path + '/sinks.json')
+    model, data = loadmodel(tr_file_name + '.ff.final.json')
+    spdfa, rev_spdfa, symbol_to_state = create_structs(data, unique_sym, train_data)
+    with open('/Users/ionbabalau/uni/thesis/SAGE/prediction_pdfa.json', 'w') as fp:
+        json.dump(spdfa, fp)
 
-    spdfa, rev_spdfa, symbol_to_state = create_structs(data, unique_sym)
+def pdfa_predict_next_action(input):
+    with open('/Users/ionbabalau/uni/thesis/SAGE/prediction_pdfa.json', 'r') as fp:
+        pdfa = json.load(fp)
+    (na, prob), skip = find_path(pdfa, input)
+    #print('Predicted', na, 'with prob', prob, 'for input trace', input)
+    return na, prob
 
-    test_pdfa(spdfa, X_test, Y_test, Y_test_as)
-
-
-    for trace in train_data:
-        trace.reverse()
-    full_model_name = create_train_test_traces(train_data, test_data)
-    unique_sym = set([item for sublist in train_data for item in sublist])
-
-    if USE_SINKS:
-        path_to_ini = flexfringe_path + '/ini/spdfa-config-sinks.ini'
-    else:
-        path_to_ini = flexfringe_path + '/ini/spdfa-config.ini'
-
-    print('------ Learning SPDFA ---------')
-    # Learn S-PDFA
-    flexfringe(full_model_name, ini=path_to_ini)
-
-    #os.system('dot -Tpng ' + full_model_name + '.ff.final.dot -o ' + output_path + '/main_model.png')
-
-    fix_syntax(full_model_name)
-
-    print('------ Loading and traversing SPDFA ---------')
-    model, data = loadmodel(full_model_name + '.ff.final.json')
-    os.system('cp ' + full_model_name + '.ff.final.json ' + output_path + '/main.json')
-    os.system('cp ' + full_model_name + '.ff.finalsinks.json '+ output_path + '/sinks.json')
-
-    spdfa, rev_spdfa, symbol_to_state = create_structs(data, unique_sym)
-
-    test_baseline_rand(Y_test, Y_test_as)
-    test_baseline(train_data, X_test, Y_test, Y_test_as, unique_sym)
-    test_pred_sum(spdfa, rev_spdfa, X_test, Y_test, Y_test_as, Strategy.FULL_MATCH, factor)
-    print('------------------------------------------')
-    test_pred_sum(spdfa, rev_spdfa, X_test, Y_test, Y_test_as, Strategy.AS_MATCH, factor)
-    print('------------------------------------------')
-    test_pred_sum(spdfa, rev_spdfa, X_test, Y_test, Y_test_as, Strategy.ALL, factor)
-    for trace in train_data:
-        trace.reverse()
-#accuracies_fact_dict[Strategy.AS_MATCH][factor].append(result_dict[Strategy.AS_MATCH][Metric.ACCURACY][-1])
-#accuracies_fact_dict[Strategy.ALL][factor].append(result_dict[Strategy.ALL][Metric.ACCURACY][-1])
-# for k in Strategy:
-#     k_accuracies[k].append(sum(result_dict[k][Metric.ACCURACY])/len(result_dict[k][Metric.ACCURACY]))
-# result_dict.clear()
-
-# fig, ax = plt.subplots()
-
-# # Plot the values
-# for key,val in k_accuracies.items():
-#     print(key)
-#     x_axis = range(5,16)
-#     y_values = val
-#     print(key, val)
-#     #y_values = [np.sum(sublist)/len(sublist) for k,sublist in val.items()]
-#     #x_axis = [k for k, _ in val.items()]
-#     ax.plot(x_axis, y_values, label=key, linestyle='-', marker='o')
-
-# # Set the title and axis labels
-# ax.set_title('Accuracy for different K values of K-fold cross validation', fontsize=13, fontfamily='serif')
-# ax.set_xlabel('Value of K', fontsize=12, fontfamily='serif')
-# ax.set_ylabel('Accuracy', fontsize=12, fontfamily='serif')
-# ax.set_xticks(range(5,16))
-# ax.set_xticklabels(str(i) for i in range(5,16))
-# #ax.set_yscale('log')
-# ax.spines['top'].set_visible(False)
-# ax.spines['right'].set_visible(False)
-# #ax.set_frame_on(False)
-
-# ax.legend()
-# ax.legend(loc='lower left')
-
-# fig.savefig("plots/kfold.pdf", dpi=300)
-
-
-
-print()
-for strat in Strategy:
-    print(strat)
-    for metric in Metric:
-        if len(result_dict[strat][metric]) != 0:
-            print(metric, sum(result_dict[strat][metric])/len(result_dict[strat][metric]))
-    print()
-
-print()
-print('Strategy.PDFA')
-for metric in Metric:
-    if len(result_pdfa[metric]) != 0:
-        print(metric, sum(result_pdfa[metric])/len(result_pdfa[metric]))
-print()
-
-print('nodes', np.sum(total_nodes)/len(total_nodes), 'edges', np.sum(total_edges)/len(total_edges))
-
-for k,v in accuracy_per_sev.items():
-    print(k, np.sum(v)/len(v))
-
-# from sklearn.metrics import confusion_matrix
-# confusion_matrix_result = confusion_matrix(true_preds, test_set_preds, labels=['LOW', 'MEDIUM', 'HIGH', 'None'])
-
-# print(np.unique(true_preds))
-# print("Confusion Matrix:")
-# print(confusion_matrix_result)
+#testkfold()
