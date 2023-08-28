@@ -157,7 +157,7 @@ def generate_traces(alerts, datafile):
     count_lines = 0
     count_cats = set()
     traces = []
-
+    lens = []
     f = open(datafile, 'w')
     lines = []
     for episodes in alerts:
@@ -172,12 +172,14 @@ def generate_traces(alerts, datafile):
         if SPDFA == True:
             trace.reverse()
         st = '1' + " "+ str(len(trace)) + ' ' + ' '.join(trace) + '\n'
+        lens.append(len(trace))
         lines.append(st)
         traces.append(trace)
     f.write(str(count_lines) + ' ' + str(len(count_cats)) + '\n')
     for st in lines:
         f.write(st)
     f.close()
+    print('AVG LEN', sum(lens)/len(lens))
     logger.debug('unqiue symbols ' + str(count_cats))
     return traces
 
@@ -323,13 +325,14 @@ def translate(label, root=False):
     new_label = ""
     parts = label.split("|")
     if root:
-        new_label += 'Victim: '+str(root)+'\n'
+        new_label += 'Victim: ' + str(root) + '\n'
 
     if len(parts) >= 1:
-        new_label += parts[0]
-        if ',' in new_label:
+        if ',' in parts[0]:
             techs = parts[0].split(',')
-            new_label = ('\n').join(techs)
+            new_label += ('\n').join(techs)
+        else:
+            new_label += parts[0]
     # if len(parts) >= 2:
     #     new_label += "\n" + parts[1]
     # if len(parts) >= 3:
@@ -429,7 +432,8 @@ def make_AG(condensed_data: dict[str, list[EpisodeNW]], sev_sinks: set[str], dir
         nodes = {}
         node_sev = {}
         attackerID = 'HACKER'
-
+        
+        action_no = 1
         for attempt in attempts: # iterate over each attempt
             # record all nodes
             for action in attempt:
@@ -483,10 +487,10 @@ def make_AG(condensed_data: dict[str, list[EpisodeNW]], sev_sinks: set[str], dir
                     gap_str = "{:.1f}".format(gap/60) + ' min'
                 else:
                     gap_str = str(gap) + ' sec'
-                if vid == 0:
+                if action_no == 1:
                     lines.append((ts1, '"' + translate(vname1) + '"' + ' -> ' + '"' + translate(vname2) +
                                     '"' + ' [ label="' + 
-                                    'action no. ' + str(vid + 1) + '\n' + 
+                                    'action no. ' + str(action_no) + '\n' + 
                                     'gap: ' + gap_str + '\n' + 
                                     'prev_ts: ' + _from_last + '\n' +
                                     'next_ts: ' + _to_first  +
@@ -498,12 +502,13 @@ def make_AG(condensed_data: dict[str, list[EpisodeNW]], sev_sinks: set[str], dir
                                     '"' + ' [ label="' + 
                                     #'end_prev: ' + _from_last + '\n' +
                                     #'start_next: ' + _to_first + '\n' +
-                                    'action no. ' + str(vid + 1) + '\n' + 
+                                    'action no. ' + str(action_no) + '\n' + 
                                     'gap: ' + gap_str + '\n' + 
-                                    'ts: ' + _to_first + 
+                                    'next_ts: ' + _to_first + 
                                     '"]' +
                                     '[ fontcolor="' + fontcolor + '" color=' + color + ']'
                                     ))
+                action_no += 1
 
         for vname, signatures in nodes.items(): # Go over all vertices again and define their shapes + make high-sev sink states dotted
             shape = 'oval'
