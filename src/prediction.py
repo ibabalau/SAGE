@@ -76,6 +76,12 @@ class EvaluationMetrics:
             'Empty Prediction Percentage': empty_percentage
         }
 
+    def get_top3_as_acc(self):
+        return self.top_3_as_accuracy_count / self.total_predictions
+
+    def get_exec_time(self):
+        return self.total_execution_time / self.total_predictions
+
 
 def parse_file(f):
     fi = open(f, 'r')
@@ -105,7 +111,7 @@ def flexfringe(*args, **kwargs):
 
     result = subprocess.run([flexfringe_path + '/flexfringe', ] + command + [args[0]], stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE, universal_newlines=True)
-    print(result.returncode, result.stdout, result.stderr)
+    # print(result.returncode, result.stdout, result.stderr)
 
     try:
         with open('dfafinal.dot') as fh:
@@ -252,24 +258,17 @@ def fix_syntax(fname, is_sink_file=False):
         with open(fname, 'w') as file:
             file.write(filedata)
 
-
 def create_structs(data, unique_sym, train_data):
     # spdfa['node_id'] -> {'total_cnt', 'symbol', 'fin', 'paths', 'transitions' = {'symbol': {'dnode', 'count'}}}
     spdfa = {}
     for node in data['nodes']:
         if node['data']['total_paths'] > 0:
-            spdfa[str(node['id'])] = {'total_cnt': node['size'], 'symbol': '', 'fin': node['data']['total_final'],
-                                      'paths': node['data']['total_paths'],
-                                      'transitions': {k: int(v) for k, v in dict(node['data']['trans_counts']).items()
-                                                      if int(v) != 0}}
+            spdfa[str(node['id'])] = {'total_cnt': node['size'], 'symbol': '', 'fin': node['data']['total_final'], 'paths': node['data']['total_paths'], 'transitions': {k: int(v) for k,v in dict(node['data']['trans_counts']).items() if int(v) != 0}}
         else:
-            spdfa[str(node['id'])] = {'total_cnt': node['size'], 'symbol': '', 'fin': node['data']['total_final'],
-                                      'paths': 0, 'transitions': {}}
+            spdfa[str(node['id'])] = {'total_cnt': node['size'], 'symbol': '', 'fin': node['data']['total_final'], 'paths': 0, 'transitions': {}}
 
     for edge in data['edges']:
-        spdfa[edge['source']]['transitions'][edge['name']] = {'dnode': edge['target'],
-                                                              'count': spdfa[edge['source']]['transitions'][
-                                                                  edge['name']]}
+        spdfa[edge['source']]['transitions'][edge['name']] = {'dnode': edge['target'], 'count': spdfa[edge['source']]['transitions'][edge['name']]}
         spdfa[edge['target']]['symbol'] = edge['name']
 
     nodes = [str(x['id']) for x in data['nodes']]
@@ -290,19 +289,17 @@ def create_structs(data, unique_sym, train_data):
     symbol_to_state = {key: set() for key in unique_sym}
 
     # reverse spdfa, dict where key is a node, value is a list of transitions to parent nodes, together with their probabilities
-    rev_spdfa = {key: {'symbol': spdfa[key]['symbol'], 'transitions': []} for key in nodes}
+    rev_spdfa = {key: {'symbol': spdfa[key]['symbol'], 'transitions':[]} for key in nodes}
 
     for edge in data['edges']:
         snode = edge['source']
         dnode = edge['target']
         symbol = edge['name']
         if spdfa[dnode]['fin'] != 0:
-            ending_prob = (spdfa[snode]['transitions'][symbol]['count'] / spdfa[dnode]['total_cnt']) * spdfa[dnode][
-                'fin'] / end_symb_cnt[symbol]
+            ending_prob = (spdfa[snode]['transitions'][symbol]['count'] / spdfa[dnode]['total_cnt']) * spdfa[dnode]['fin'] / end_symb_cnt[symbol]
         else:
             ending_prob = 0
-        prob = (spdfa[snode]['transitions'][symbol]['count'] / spdfa[dnode][
-            'total_cnt'])  # * spdfa[snode]['transitions'][symbol]['count']/total_symb_cnt[symbol]
+        prob = (spdfa[snode]['transitions'][symbol]['count'] / spdfa[dnode]['total_cnt']) #* spdfa[snode]['transitions'][symbol]['count']/total_symb_cnt[symbol]
         rev_spdfa[dnode]['transitions'].append({'target': snode, 'prob': prob, 'ending_prob': ending_prob})
         symbol_to_state[symbol].add(dnode)
     return spdfa, rev_spdfa, symbol_to_state
@@ -640,8 +637,9 @@ def find_path(pdfa, trace):
     if pdfa[node]['transitions'] == {}:
         return ([], 0)
     top3 = sorted(pdfa[node]['transitions'].items(), key=lambda x: x[1]['count'], reverse=True)[:3]
+    summ = sum([x[1]['count'] for x in pdfa[node]['transitions'].items()])
     top3 = [x[0] for x in top3]
-    return (top3, prob)
+    return (top3, pdfa[node]['transitions'][top3[0]]['count']/summ)
 
 
 def test_pdfa(pdfa, X_test, Y_test, results):
@@ -652,6 +650,7 @@ def test_pdfa(pdfa, X_test, Y_test, results):
     for tt in X_test:
         preds, prob = find_path(pdfa, tt)
         y_pred.append(preds)
+        print(f'pdfa finished with len {len(tt)}')
     exec_time = time.time() - start_time
     results[Strategy.PDFA].update_metrics(Y_test, y_pred, exec_time)
 
@@ -692,12 +691,13 @@ def test_baseline_rand(train_data, Y_test, results):
     results[Strategy.BASELINE_RAND].update_metrics(Y_test, random_predictions, end_time)
 
 
-def bar_plot():
+def bar_plot(as_count):
     # Create subplots
+
     fig, ax = plt.subplots()  # 1 row, 3 columns
 
     labels = ['Low', 'Medium', 'High']
-    # ax.bar(labels, as_count.values(), edgecolor='black')
+    ax.bar(labels, as_count.values(), edgecolor='black')
 
     ax.set_title('Severity distribution of last symnols in CPTC-2018 traces', fontsize=13, fontfamily='serif')
     ax.set_xlabel('Severity', fontsize=12, fontfamily='serif')
@@ -705,6 +705,36 @@ def bar_plot():
 
     # Display the plot
     fig.savefig('plots/severity_distrib.pdf', dpi=300)
+
+def bar_plot_nw():
+    # Given dictionaries
+    as_cnt_pentest = {'Low': 15, 'Medium': 52, 'High': 49}
+    as_cnt_big = {'Low': 87, 'Medium': 373, 'High': 48}
+
+    # Extracting keys and values
+    keys = list(as_cnt_pentest.keys())
+    pentest_values = list(as_cnt_pentest.values())
+    big_values = list(as_cnt_big.values())
+
+    # Setting up positions for bars
+    x = range(len(keys))
+    width = 0.35
+
+    # Plotting the bars
+    fig, ax = plt.subplots()
+    bars1 = ax.bar(x, pentest_values, width, label='Pentest', edgecolor='black')
+    bars2 = ax.bar([i + width for i in x], big_values, width, label='Big env.', edgecolor='black')
+
+    # Adding labels, title, and legend
+    ax.set_xlabel('Severity', fontsize=12, fontfamily='serif')
+    ax.set_ylabel('Count', fontsize=12, fontfamily='serif')
+    ax.set_title('Severity distribution of alerts in real-world datasets', fontsize=13, fontfamily='serif')
+    ax.set_xticks([i + width / 2 for i in x])
+    ax.set_xticklabels(keys)
+    ax.legend()
+
+    # Displaying the plot
+    fig.savefig('plots/paper_plots/nw_sev_distrib.pdf', dpi=300)
 
 
 def line_plot(x, values, keys):
@@ -720,9 +750,9 @@ def line_plot(x, values, keys):
 
     x_ticks = [1, 5] + [i for i in range(10, 100, 5)] + [x[-1]]
     # Set the title and axis labels
-    ax.set_title('Accuracy for different multiplication factors', fontsize=13, fontfamily='serif')
+    ax.set_title('Top 3 AS Accuracy for different multiplication factors', fontsize=13, fontfamily='serif')
     ax.set_xlabel('Factor', fontsize=12, fontfamily='serif')
-    ax.set_ylabel('Accuracy', fontsize=12, fontfamily='serif')
+    ax.set_ylabel('Top 3 AS Accuracy', fontsize=12, fontfamily='serif')
     ax.set_xticks(x_ticks)
     ax.set_xticklabels(str(i) for i in x_ticks)
     # ax.set_yscale('log')
@@ -733,7 +763,69 @@ def line_plot(x, values, keys):
     ax.legend()
     ax.legend(loc='lower left')
 
-    fig.savefig("plots/final_plots/factors.pdf", dpi=300)
+    fig.savefig("plots/paper_plots/factors.pdf", dpi=300)
+
+def line_plot_k(x, keys, values):
+    fig, ax = plt.subplots()
+
+    # Plot the values
+    x_axis = x
+    keys = ['Random Guess', 'Frequency Based', 'rSPDFA (FS strat 1)', 'rSPDFA (AS strat 2)', 'rSPDFA (HC strat 3)', 'PDFA']
+    for key, val in zip(keys, values):
+        y_values = val
+        # y_values = [np.sum(sublist)/len(sublist) for k,sublist in val.items()]
+        # x_axis = [k for k, _ in val.items()]
+        ax.plot(x_axis, y_values, label=key, linestyle='-', marker='o')
+
+    x_ticks = x
+    # Set the title and axis labels
+    ax.set_title('Top 3 AS accuracy for different K values of K-fold c.v.', fontsize=13, fontfamily='serif')
+    ax.set_xlabel('Value of K', fontsize=12, fontfamily='serif')
+    ax.set_ylabel('Top 3 AS Accuracy', fontsize=12, fontfamily='serif')
+    ax.set_xticks(x_ticks)
+    ax.set_xticklabels(str(i) for i in x_ticks)
+    # ax.set_yscale('log')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    # ax.set_frame_on(False)
+
+    ax.legend()
+    ax.legend(loc='lower left')
+
+    fig.savefig("plots/paper_plots/k_fold_new.pdf", dpi=300)
+
+def line_plot_exectime(x, keys, values):
+    fig, ax = plt.subplots()
+
+    # Plot the values
+    x_axis = x
+    keys = ['Random Guess', 'Frequency Based', 'rSPDFA (FS strat 1)', 'rSPDFA (AS strat 2)', 'rSPDFA (HC strat 3)', 'PDFA']
+    for key, val in zip(keys, values):
+        if val == []:
+            continue
+        y_values = val
+        # y_values = [np.sum(sublist)/len(sublist) for k,sublist in val.items()]
+        # x_axis = [k for k, _ in val.items()]
+        ax.plot(x_axis, y_values, label=key, linestyle='-', marker='o')
+
+    x_ticks = x
+    # Set the title and axis labels
+    ax.set_title('Execution time for different input sizes per strategy', fontsize=13, fontfamily='serif')
+    ax.set_xlabel('Input trace length', fontsize=12, fontfamily='serif')
+    ax.set_ylabel('Execution time, seconds', fontsize=12, fontfamily='serif')
+    ax.set_yscale('log')
+    ax.set_xticks(x_ticks)
+    ax.set_xticklabels(str(i) for i in x_ticks)
+    # ax.set_yscale('log')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    # ax.set_frame_on(False)
+
+    ax.legend()
+    ax.legend(loc='lower left')
+
+
+    fig.savefig("plots/paper_plots/exec_time.pdf", dpi=300)
 
 
 def is_subsequence(small, large):
@@ -765,33 +857,46 @@ USE_SINKS = True
 
 ### MAIN START ###
 def run_experiments():
-    results = {strategy: EvaluationMetrics() for strategy in Strategy}
     cnt = 15
-    K = 13
+    K = 5
     max_len = 6
-    lens = [i for i in range(300, 501, 25)]
-    total_nodes = []
-    total_edges = []
+    factor = 55
 
     traces = parse_file(tr_file_name)
     as_traces = []
     for trace in traces:
         trace.reverse()
+    unique_trace = traces
+
+
 
     # uncomment for unseen traces exp
-    # unique_trace = [list(y) for y in set([tuple(x) for x in traces])]
-    # unique_trace = filter_unique_samples(unique_trace)
-    unique_trace = traces
-    factor = 75
+    unique_trace = [list(y) for y in set([tuple(x) for x in traces])]
+    unique_trace = filter_unique_samples(unique_trace)
+    # k_values = [k for k in range(5, 16)]
+    # k_results = {strat: [] for strat in Strategy}
+    # for K in k_values:
+    # factors = [1, 5, 10] + [i for i in range(15, 105, 5)]
+    # factor_result = {'rSPDFA (AS strat 2)':[], 'rSPDFA (HC strat 3)':[]}
+    # for factor in factors:
+    # trace_lens = [i for i in range(2, 8)]
+    # exec_time_results = {strat: [] for strat in Strategy}
+    # trace_per_len = {i: [] for i in range(30)}
+    # for tr in traces:
+    #     for i in range(3, len(tr)):
+    #         trace_per_len[i].append(tr[:i])
+    # for trace_len in trace_lens:
+    results = {strategy: EvaluationMetrics() for strategy in Strategy}
     kf = KFold(n_splits=K, shuffle=True, random_state=42)
     for train_index, test_index in kf.split(unique_trace):
         test_data = [unique_trace[i] for i in test_index]
-        # train_data = []
-        # for tr in traces:
-        #     if tr not in test_data:
-        #         train_data.append(tr)
-        test_data = [trace[:max_len] for trace in test_data]
-        train_data = [unique_trace[i] for i in train_index]
+        train_data = []
+        for tr in traces:
+            if tr not in test_data:
+                train_data.append(tr)
+        # test_data = [trace[:max_len] for trace in test_data]
+        # train_data = [unique_trace[i] for i in train_index]
+        # train_data = traces
         # now test with pdfa
         full_model_name = create_train_test_traces(train_data, test_data)
         unique_sym = set([item for sublist in train_data for item in sublist])
@@ -846,24 +951,46 @@ def run_experiments():
 
         spdfa, rev_spdfa, symbol_to_state = create_structs(data, unique_sym, train_data)
 
-        test_baseline_rand(train_data, Y_test, results)
-        test_baseline(train_data, X_test, Y_test, Y_test_as, unique_sym, results)
-        print('----------FULL MATCH---------------')
-        test_pred_sum(rev_spdfa, X_test, Y_test, Strategy.FULL_MATCH, factor, symbol_to_state, results)
-        print('----------AS MATCH----------------------')
-        test_pred_sum(rev_spdfa, X_test, Y_test, Strategy.AS_MATCH, factor, symbol_to_state, results)
-        print('----------ANY SYMBOL-------------------------')
-        test_pred_sum(rev_spdfa, X_test, Y_test, Strategy.ALL, factor, symbol_to_state, results)
+        # test_baseline_rand(train_data, Y_test, results)
+        # test_baseline(train_data, X_test, Y_test, Y_test_as, unique_sym, results)
+        # print('----------FULL MATCH---------------')
+        # test_pred_sum(rev_spdfa, X_test, Y_test, Strategy.FULL_MATCH, factor, symbol_to_state, results)
+        # print('----------AS MATCH----------------------')
+        # test_pred_sum(rev_spdfa, X_test, Y_test, Strategy.AS_MATCH, factor, symbol_to_state, results)
+        # print('----------ANY SYMBOL-------------------------')
+        # test_pred_sum(rev_spdfa, X_test, Y_test, Strategy.ALL, factor, symbol_to_state, results)
         for trace in train_data:
             trace.reverse()
 
-    for strat in Strategy:
-        print(strat)
-        print(results[strat].calculate_metrics())
+    print(results[Strategy.PDFA].calculate_metrics())
+    # for strat in Strategy:
+    #     print(strat)
+    #     print(results[strat].calculate_metrics())
+    #         if strat == Strategy.BASELINE_RAND or strat == Strategy.BASELINE_PROB:
+    #             continue
+    #         exec_time_results[strat].append(results[strat].get_exec_time())
+    # print(exec_time_results)
+    # line_plot_exectime(trace_lens, exec_time_results.keys(), exec_time_results.values())
+
+    # factor_result['rSPDFA (AS strat 2)'].append(results[Strategy.AS_MATCH].get_top3_as_acc())
+    # factor_result['rSPDFA (HC strat 3)'].append(results[Strategy.ALL].get_top3_as_acc())
+    # line_plot(factors, factor_result.values(), factor_result.keys())
+    #
+    # print(factor_result)
+    # # line_plot_k(k_values, k_results.keys(), k_results.values())
+    # for k, v in factor_result.items():
+    #     mx_ind = 0
+    #     mx = 0
+    #     for i, val in enumerate(v):
+    #         if val > mx:
+    #             mx = val
+    #             mx_ind = i
+    #     print(k, mx_ind, mx)
+
 
 
 def train_pdfa():
-    tr_file_name = '/Users/ionbabalau/uni/thesis/SAGE/pred_traces/traces_team125_pdfa.txt'
+    tr_file_name = '/Users/ionbabalau/uni/thesis/SAGE/pred_traces/traces_team1257_pdfa.txt'
     train_data = parse_file(tr_file_name)
     unique_sym = set([item for sublist in train_data for item in sublist])
     path_to_ini = flexfringe_path + '/ini/spdfa-config-sinks.ini'
@@ -883,8 +1010,11 @@ def train_pdfa():
 def pdfa_predict_next_action(input):
     with open('/Users/ionbabalau/uni/thesis/SAGE/prediction_pdfa.json', 'r') as fp:
         pdfa = json.load(fp)
-    (na, prob), skip = find_path(pdfa, input)
+    preds, prob = find_path(pdfa, input)
     # print('Predicted', na, 'with prob', prob, 'for input trace', input)
-    return na, prob
+
+    return preds[0] if len(preds) > 0 else 'None', prob
 
 run_experiments()
+# train_pdfa()
+# bar_plot_nw()
